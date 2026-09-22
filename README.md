@@ -62,6 +62,24 @@ npm install
 npm run dev                    # http://localhost:5173
 ```
 
+### En Windows (PowerShell)
+
+```powershell
+# Backend
+cd backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1   # si falla: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+pip install -e ".[dev]"
+copy ..\.env.example .env       # y llena los valores con: notepad .env
+alembic upgrade head
+uvicorn app.main:app --reload --port 8000
+
+# Frontend (otra ventana de PowerShell)
+cd frontend
+npm install
+npm run dev
+```
+
 Vite reenvía `/api` al backend, así que la cookie de sesión y el redirect de OAuth
 usan el mismo origen (`localhost:5173`).
 
