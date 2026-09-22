@@ -97,3 +97,9 @@ def test_submissions_endpoint(client, monkeypatch):
 def test_scope_aliases_are_normalized():
     granted = google_oauth.normalize_scopes("openid email profile " + " ".join(GOOGLE_SCOPES[3:]))
     assert google_oauth.missing_scopes(granted) == []
+
+
+def test_write_scope_covers_readonly():
+    granted = set(GOOGLE_SCOPES) - {"https://www.googleapis.com/auth/classroom.coursework.students.readonly"}
+    granted.add("https://www.googleapis.com/auth/classroom.coursework.students")
+    assert google_oauth.missing_scopes(granted) == []

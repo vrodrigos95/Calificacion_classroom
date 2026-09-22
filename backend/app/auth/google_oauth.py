@@ -76,7 +76,10 @@ def normalize_scopes(raw: str | list[str] | None) -> set[str]:
 
 
 def missing_scopes(granted: set[str]) -> list[str]:
-    return [s for s in GOOGLE_SCOPES if s not in granted]
+    """Scopes pedidos que no se concedieron. Un scope con escritura cubre su versión .readonly."""
+    return [
+        s for s in GOOGLE_SCOPES if s not in granted and s.removesuffix(".readonly") not in granted
+    ]
 
 
 @dataclass

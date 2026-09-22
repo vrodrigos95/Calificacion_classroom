@@ -54,6 +54,12 @@ def callback(
     missing = google_oauth.missing_scopes(result.granted_scopes)
     if missing:
         # Google permite desmarcar permisos en la pantalla de consentimiento.
+        # Los scopes no son datos personales; registrarlos ayuda a diagnosticar.
+        log.warning(
+            "Permisos incompletos. Faltan: %s | Concedidos: %s",
+            " ".join(missing),
+            " ".join(sorted(result.granted_scopes)),
+        )
         return _to_frontend("/login", error="permisos", faltan=" ".join(missing))
 
     teacher = google_oauth.upsert_teacher(db, result)
