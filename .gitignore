@@ -1,0 +1,19 @@
+# Datos locales: BD, imágenes de alumnos, recortes. Nunca se versionan.
+data/
+backend/data/
+*.db
+
+# Credenciales
+.env
+*.env.local
+client_secret*.json
+
+# Python
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+
+# Node
+node_modules/
+frontend/dist/
