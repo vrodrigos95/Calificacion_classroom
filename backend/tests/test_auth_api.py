@@ -103,3 +103,16 @@ def test_write_scope_covers_readonly():
     granted = set(GOOGLE_SCOPES) - {"https://www.googleapis.com/auth/classroom.coursework.students.readonly"}
     granted.add("https://www.googleapis.com/auth/classroom.coursework.students")
     assert google_oauth.missing_scopes(granted) == []
+
+
+def test_legacy_student_submissions_scope_name_is_accepted():
+    # Respuesta real de Google con una cuenta institucional (nombres de scope antiguos).
+    granted = google_oauth.normalize_scopes(
+        "email profile https://www.googleapis.com/auth/drive.readonly "
+        "https://www.googleapis.com/auth/classroom.student-submissions.students.readonly "
+        "https://www.googleapis.com/auth/classroom.rosters.readonly "
+        "https://www.googleapis.com/auth/classroom.courses.readonly "
+        "https://www.googleapis.com/auth/userinfo.profile "
+        "https://www.googleapis.com/auth/userinfo.email openid"
+    )
+    assert google_oauth.missing_scopes(granted) == []

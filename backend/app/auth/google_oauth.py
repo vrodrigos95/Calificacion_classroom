@@ -20,10 +20,17 @@ os.environ.setdefault("OAUTHLIB_RELAX_TOKEN_SCOPE", "1")
 
 TOKEN_URI = "https://oauth2.googleapis.com/token"
 
-# Alias con los que Google puede reportar los scopes de identidad.
+_G = "https://www.googleapis.com/auth/"
+
+# Alias con los que Google reporta los scopes concedidos: los de identidad abreviados y los
+# de Classroom con su nombre antiguo (student-submissions.* se renombró a coursework.*).
 _SCOPE_ALIASES = {
-    "email": "https://www.googleapis.com/auth/userinfo.email",
-    "profile": "https://www.googleapis.com/auth/userinfo.profile",
+    "email": _G + "userinfo.email",
+    "profile": _G + "userinfo.profile",
+    _G + "classroom.student-submissions.students.readonly": _G + "classroom.coursework.students.readonly",
+    _G + "classroom.student-submissions.students": _G + "classroom.coursework.students",
+    _G + "classroom.student-submissions.me.readonly": _G + "classroom.coursework.me.readonly",
+    _G + "classroom.student-submissions.me": _G + "classroom.coursework.me",
 }
 
 
