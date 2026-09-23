@@ -164,7 +164,8 @@ export function SubmissionsPage() {
                   <td>{s.student_name}</td>
                   <td>
                     <span className={`badge badge-${s.status}`}>{STATUS_LABEL[s.status]}</span>
-                    {s.late && <span className="badge badge-late">Tarde</span>}
+                    {/* Classroom marca "late" también a quien no entregó y ya venció; ahí no aporta. */}
+                    {s.late && s.status !== 'sin_entrega' && <span className="badge badge-late">Tarde</span>}
                   </td>
                   <td>
                     <AttachmentList s={s} />
