@@ -12,7 +12,7 @@ calificación y un comentario sugeridos, y el docente los captura a mano.
 | Etapa | Contenido | Estado |
 |---|---|---|
 | 1 | OAuth y listado de cursos, tareas y entregas | ✅ |
-| 2 | Descarga y conversión a imágenes | ✅ (falta probar Drive con tu cuenta) |
+| 2 | Descarga y conversión a imágenes | ✅ |
 | 3 | Módulo de marca de validación | pendiente |
 | 4 | Calificación de una entrega | pendiente |
 | 5 | Procesamiento por lote y panel | pendiente |
