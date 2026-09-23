@@ -31,6 +31,7 @@ from app.db.session import SessionLocal
 from app.files.base import FileFetchError, FileSource
 from app.imaging.convert import UnsupportedFile, to_pages
 from app.logging_conf import RedactionFilter
+from app.marks.service import clear_mark_results
 
 log = logging.getLogger(__name__)
 
@@ -86,6 +87,7 @@ def sync_submissions(
             if sub.id:
                 delete_page_files(sub.id)
             sub.pages.clear()
+            clear_mark_results(sub)
             sub.download_status, sub.error = DL_SIN_ENTREGA, None
         elif not live.attachments:
             sub.pages.clear()
@@ -94,6 +96,7 @@ def sync_submissions(
         elif ids != sub.attachment_ids or sub.download_status in (DL_SIN_ENTREGA, DL_EXPIRADA):
             # Nueva entrega o volvió a entregar con otros archivos.
             sub.download_status, sub.error = DL_PENDIENTE, None
+            clear_mark_results(sub)
         sub.attachment_ids = ids if live.delivered else ""
     db.commit()
     return assignment
@@ -121,6 +124,7 @@ def process_submission(submission_id: int, source: FileSource) -> None:
             delete_page_files(sub.id)
             out_dir.mkdir(parents=True, exist_ok=True)
             sub.pages.clear()
+            clear_mark_results(sub)
             index = 0
             for file_id in sub.attachment_ids.split():
                 fetched = source.fetch(file_id)

@@ -13,7 +13,7 @@ calificación y un comentario sugeridos, y el docente los captura a mano.
 |---|---|---|
 | 1 | OAuth y listado de cursos, tareas y entregas | ✅ |
 | 2 | Descarga y conversión a imágenes | ✅ |
-| 3 | Módulo de marca de validación | pendiente |
+| 3 | Módulo de marca de validación | ✅ modo local · falta probar con Claude |
 | 4 | Calificación de una entrega | pendiente |
 | 5 | Procesamiento por lote y panel | pendiente |
 | 6 | Detección de copias | pendiente |
@@ -100,10 +100,31 @@ cd backend && pytest
 cd frontend && npm run build && npm run lint
 ```
 
+## Módulo de marca de validación
+
+1. En **Mi marca** sube 1 a 5 fotos o recortes de tu firma o sello, elige su significado
+   ("Tarea correcta" = 100 sin revisar contenido, o "Solo informativa") y dónde buscarla.
+2. En la tarea: **Descargar entregas** y luego **Revisar marcas**.
+3. Cada entrega con marca muestra el recorte junto al nombre del alumno.
+
+Cómo decide:
+
+- **Prefiltro por color** (sin costo): busca la tinta de tu marca en el espacio de color Lab,
+  que detecta tintas tenues sobre cuadrícula y la separa de otros colores (azul, rosa…).
+- **Verificación**:
+  - *Con `ANTHROPIC_API_KEY`*: Claude compara cada recorte con tus referencias y da una
+    confianza. ≥ 0.85 → "Con marca" (100); 0.60–0.85 → "¿Es tu marca?" (tú decides);
+    < 0.60 → sin marca. Si la API falla, la entrega queda en "Revisar a mano" con el recorte.
+  - *Sin clave (modo local)*: la app encuentra la tinta y te muestra el recorte, pero **nunca
+    pone 100 sola**; tú confirmas cada una (o "Confirmar las N por confirmar" tras verlas).
+- El interruptor "Buscar mi marca en esta tarea" desactiva el módulo por tarea.
+- Tu decisión (sí / no) nunca se sobrescribe al volver a revisar.
+
 ## Privacidad (los alumnos son menores)
 
 - De los alumnos solo se guarda lo necesario para el panel; nunca su correo.
 - Los logs pasan por un filtro que enmascara correos y nombres; el código solo registra IDs internos.
-- Las imágenes descargadas se borran tras `RETENTION_DAYS` días (configurable por docente).
+- Las imágenes descargadas y los recortes de marcas se borran tras `RETENTION_DAYS` días (configurable por docente).
+- Las imágenes de las entregas se envían a la API de Anthropic solo si configuras `ANTHROPIC_API_KEY`.
 - Los tracebacks de errores también pasan por el filtro de nombres.
 - El refresh token de Google se guarda cifrado (Fernet, `TOKEN_ENCRYPTION_KEY`).

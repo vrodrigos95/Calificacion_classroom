@@ -31,8 +31,9 @@ def purge_expired_images(db: Session, now: datetime | None = None) -> int:
         )
         for sub in subs:
             if sub.downloaded_at and _aware(sub.downloaded_at) < cutoff:
-                delete_page_files(sub.id)
+                delete_page_files(sub.id)  # incluye los recortes de marcas
                 sub.pages.clear()
+                sub.detections.clear()
                 sub.download_status = DL_EXPIRADA
                 purged += 1
     db.commit()

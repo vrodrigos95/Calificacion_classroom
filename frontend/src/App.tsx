@@ -1,5 +1,6 @@
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Link, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { api } from './api'
+import { MarksPage } from './MarksPage'
 import { CourseWorkPage, CoursesPage, LoginPage, SubmissionsPage } from './pages'
 import { useApi } from './useApi'
 
@@ -12,10 +13,14 @@ function Layout() {
   return (
     <>
       <header>
-        <strong>Revisor de tareas</strong>
+        <Link to="/" className="brand">
+          Revisor de tareas
+        </Link>
         {me && (
-          <span>
-            {me.name} <button onClick={logout}>Cerrar sesión</button>
+          <span className="header-right">
+            <Link to="/configuracion">Mi marca</Link>
+            <span>{me.name}</span>
+            <button onClick={logout}>Cerrar sesión</button>
           </span>
         )}
       </header>
@@ -35,6 +40,7 @@ export default function App() {
           <Route path="/" element={<CoursesPage />} />
           <Route path="/cursos/:courseId" element={<CourseWorkPage />} />
           <Route path="/cursos/:courseId/tareas/:cwId" element={<SubmissionsPage />} />
+          <Route path="/configuracion" element={<MarksPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

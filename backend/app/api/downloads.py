@@ -10,10 +10,11 @@ from app.api.deps import classroom_reader, current_teacher
 from app.auth.google_oauth import credentials_for
 from app.classroom.client import ClassroomReader
 from app.config import get_settings
-from app.db.models import Assignment, Page, Submission, Teacher
+from app.db.models import MK_CON_MARCA, V_DUDOSA, V_MARCA, Assignment, Page, Submission, Teacher
 from app.db.session import get_db
 from app.files.base import FileSource
 from app.files.drive_readonly import DriveReadonlySource, build_drive_service
+from app.marks import service as mark_service
 from app.pipeline import download
 
 router = APIRouter(prefix="/api", tags=["descargas"])
@@ -36,33 +37,81 @@ class PageOut(BaseModel):
     height: int
 
 
+class DetectionOut(BaseModel):
+    id: int
+    mark_name: str
+    meaning: str
+    verdict: str  # marca | dudosa
+    confidence: float
+    reason: str
+    verifier: str
+    page_index: int
+
+
 class SubmissionDownloadOut(BaseModel):
     status: str
     error: str | None
     pages: list[PageOut]
+    # Módulo de marca (etapa 3)
+    mark_status: str | None  # ya considera la decisión del docente
+    mark_detail: str | None
+    mark_confirmed: bool | None
+    detections: list[DetectionOut]  # solo marcas y dudosas, con su recorte
+    suggested_score: float | None  # 100 si tiene marca "tarea correcta"
 
 
 class DownloadStatusOut(BaseModel):
     running: bool
+    marks_running: bool
+    mark_module_enabled: bool
     counts: dict[str, int]
     # clave: id de la entrega en Classroom (el mismo que usa el listado)
     submissions: dict[str, SubmissionDownloadOut]
 
 
+def _submission_out(s: Submission) -> SubmissionDownloadOut:
+    mark_status = mark_service.effective_status(s)
+    return SubmissionDownloadOut(
+        status=s.download_status,
+        error=s.error,
+        pages=[PageOut(id=p.id, index=p.index, width=p.width, height=p.height) for p in s.pages],
+        mark_status=mark_status,
+        mark_detail=s.mark_detail,
+        mark_confirmed=s.mark_confirmed,
+        detections=[
+            DetectionOut(
+                id=d.id,
+                mark_name=d.mark.name if d.mark else "(marca borrada)",
+                meaning=d.mark.meaning if d.mark else "informativa",
+                verdict=d.verdict,
+                confidence=d.confidence,
+                reason=d.reason,
+                verifier=d.verifier,
+                page_index=d.page_index,
+            )
+            for d in s.detections
+            if d.verdict in (V_MARCA, V_DUDOSA)
+        ],
+        suggested_score=100.0 if mark_status == MK_CON_MARCA else None,
+    )
+
+
 def _status(assignment: Assignment | None) -> DownloadStatusOut:
     if assignment is None:
-        return DownloadStatusOut(running=False, counts={}, submissions={})
+        return DownloadStatusOut(
+            running=False, marks_running=False, mark_module_enabled=True, counts={}, submissions={}
+        )
     counts: dict[str, int] = {}
     subs = {}
     for s in assignment.submissions:
         counts[s.download_status] = counts.get(s.download_status, 0) + 1
-        subs[s.classroom_submission_id] = SubmissionDownloadOut(
-            status=s.download_status,
-            error=s.error,
-            pages=[PageOut(id=p.id, index=p.index, width=p.width, height=p.height) for p in s.pages],
-        )
+        subs[s.classroom_submission_id] = _submission_out(s)
     return DownloadStatusOut(
-        running=download.is_running(assignment.id), counts=counts, submissions=subs
+        running=download.is_running(assignment.id),
+        marks_running=mark_service.is_running(assignment.id),
+        mark_module_enabled=assignment.mark_module_enabled,
+        counts=counts,
+        submissions=subs,
     )
 
 

@@ -8,40 +8,56 @@ function handle(err: unknown, setError: (m: string) => void) {
   else setError(err instanceof Error ? err.message : String(err))
 }
 
-/** Estado de descarga de una tarea; consulta cada 2 s mientras hay un lote en curso. */
+/** Estado de descarga y marcas de una tarea; consulta cada 2 s mientras hay un lote en curso. */
 export function useDownloads(courseId: string, cwId: string) {
   const [status, setStatus] = useState<DownloadStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [starting, setStarting] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [tick, setTick] = useState(0) // fuerza una recarga
 
-  // Carga inicial y sondeo mientras running = true.
   useEffect(() => {
     let alive = true
-    const delay = status === null ? 0 : status.running ? POLL_MS : null
+    const polling = status !== null && (status.running || status.marks_running)
+    const delay = status === null || tick > 0 ? 0 : polling ? POLL_MS : null
     if (delay === null) return
     const t = window.setTimeout(() => {
       api
         .downloadStatus(courseId, cwId)
-        .then((s) => alive && setStatus(s))
+        .then((s) => {
+          if (!alive) return
+          setTick(0)
+          setStatus(s)
+        })
         .catch((err) => alive && handle(err, setError))
     }, delay)
     return () => {
       alive = false
       window.clearTimeout(t)
     }
-  }, [status, courseId, cwId])
+  }, [status, tick, courseId, cwId])
 
-  const start = async () => {
-    setStarting(true)
+  const run = async (action: () => Promise<unknown>, reload = true) => {
+    setBusy(true)
     setError(null)
     try {
-      setStatus(await api.startDownload(courseId, cwId))
+      await action()
+      if (reload) setTick((n) => n + 1)
     } catch (err) {
       handle(err, setError)
     } finally {
-      setStarting(false)
+      setBusy(false)
     }
   }
 
-  return { status, error, starting, start }
+  return {
+    status,
+    error,
+    busy,
+    startDownload: () => run(async () => setStatus(await api.startDownload(courseId, cwId)), false),
+    detectMarks: () => run(() => api.detectMarks(courseId, cwId)),
+    setModule: (enabled: boolean) => run(() => api.setMarkModule(courseId, cwId, enabled)),
+    decide: (sid: string, confirmed: boolean | null) =>
+      run(() => api.markDecision(courseId, cwId, sid, confirmed)),
+    confirmAll: () => run(() => api.confirmAllMarks(courseId, cwId)),
+  }
 }

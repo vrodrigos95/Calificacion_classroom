@@ -9,7 +9,7 @@ from googleapiclient.errors import HttpError
 from starlette.concurrency import run_in_threadpool
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.api import auth, classroom, downloads
+from app.api import auth, classroom, downloads, marks
 from app.auth.google_oauth import OAuthError, invalidate_credentials
 from app.auth.token_crypto import TokenCryptoError
 from app.config import get_settings
@@ -71,6 +71,7 @@ def create_app() -> FastAPI:
     app.include_router(auth.router)
     app.include_router(classroom.router)
     app.include_router(downloads.router)
+    app.include_router(marks.router)
 
     @app.exception_handler(RefreshError)
     @app.exception_handler(OAuthError)

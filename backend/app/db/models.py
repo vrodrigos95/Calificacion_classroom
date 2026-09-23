@@ -2,6 +2,7 @@
 
 Etapa 1: docente, token OAuth y configuración por docente.
 Etapa 2: tareas, entregas y páginas descargadas.
+Etapa 3: marcas de validación del docente y su detección en cada entrega.
 
 De los alumnos solo se guarda lo necesario para el panel: su userId de Classroom,
 su nombre y el enlace a la entrega. Nunca su correo.
@@ -130,10 +131,18 @@ class Submission(Base):
     download_status: Mapped[str] = mapped_column(String(20), default=DL_PENDIENTE)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     downloaded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Módulo de marca (etapa 3). mark_status: ver MK_* abajo; None = aún no se revisa.
+    mark_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    mark_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Decisión del docente sobre la marca: True = confirmó, False = rechazó, None = sin decidir.
+    mark_confirmed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
 
     assignment: Mapped[Assignment] = relationship(back_populates="submissions")
     pages: Mapped[list["Page"]] = relationship(
         back_populates="submission", cascade="all, delete-orphan", order_by="Page.index"
+    )
+    detections: Mapped[list["MarkDetection"]] = relationship(
+        back_populates="submission", cascade="all, delete-orphan", order_by="MarkDetection.id"
     )
 
 
@@ -151,3 +160,83 @@ class Page(Base):
     source_file_id: Mapped[str] = mapped_column(String(128))
 
     submission: Mapped[Submission] = relationship(back_populates="pages")
+
+
+# Significado y zona de búsqueda de una marca
+MEANING_CORRECTA = "correcta"  # la entrega vale 100 y no se revisa el contenido
+MEANING_INFORMATIVA = "informativa"  # se muestra, pero la tarea se revisa normal
+ZONE_PRIMERA = "primera"
+ZONE_CUALQUIERA = "cualquiera"
+
+
+class ValidationMark(Base):
+    """Firma o sello del docente, con su significado y dónde buscarlo."""
+
+    __tablename__ = "validation_marks"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    teacher_id: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(String(100))
+    meaning: Mapped[str] = mapped_column(String(20), default=MEANING_CORRECTA)
+    zone: Mapped[str] = mapped_column(String(20), default=ZONE_PRIMERA)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    profile_json: Mapped[str] = mapped_column(Text, default="{}")  # ColorProfile
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    references: Mapped[list["MarkReference"]] = relationship(
+        back_populates="mark", cascade="all, delete-orphan", order_by="MarkReference.id"
+    )
+
+
+class MarkReference(Base):
+    """Imagen de referencia de una marca. Vive en DATA_DIR/marks/ (no aplica retención)."""
+
+    __tablename__ = "mark_references"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    mark_id: Mapped[int] = mapped_column(ForeignKey("validation_marks.id", ondelete="CASCADE"))
+    path: Mapped[str] = mapped_column(String(500))
+    width: Mapped[int] = mapped_column(Integer)
+    height: Mapped[int] = mapped_column(Integer)
+
+    mark: Mapped[ValidationMark] = relationship(back_populates="references")
+
+
+# Resultado del módulo de marca en una entrega
+MK_CON_MARCA = "con_marca"
+MK_DUDOSA = "dudosa"
+MK_SIN_MARCA = "sin_marca"
+MK_ERROR = "error"
+MK_DESACTIVADO = "desactivado"
+MK_SIN_CONFIG = "sin_config"  # el docente no tiene marcas activas
+MK_NO_REVISABLE = "no_revisable"  # la entrega no tiene imágenes
+
+# Veredicto por candidato
+V_MARCA = "marca"
+V_DUDOSA = "dudosa"
+V_NO_MARCA = "no_marca"
+
+
+class MarkDetection(Base):
+    """Un candidato encontrado en una página, con su recorte y el veredicto."""
+
+    __tablename__ = "mark_detections"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    submission_id: Mapped[int] = mapped_column(ForeignKey("submissions.id", ondelete="CASCADE"))
+    mark_id: Mapped[int | None] = mapped_column(
+        ForeignKey("validation_marks.id", ondelete="SET NULL"), nullable=True
+    )
+    page_index: Mapped[int] = mapped_column(Integer)
+    x0: Mapped[int] = mapped_column(Integer)
+    y0: Mapped[int] = mapped_column(Integer)
+    x1: Mapped[int] = mapped_column(Integer)
+    y1: Mapped[int] = mapped_column(Integer)
+    crop_path: Mapped[str] = mapped_column(String(500))  # relativo a DATA_DIR (con las páginas)
+    confidence: Mapped[float] = mapped_column(Float)
+    verdict: Mapped[str] = mapped_column(String(20))
+    reason: Mapped[str] = mapped_column(Text, default="")
+    verifier: Mapped[str] = mapped_column(String(20))
+
+    submission: Mapped[Submission] = relationship(back_populates="detections")
+    mark: Mapped[ValidationMark | None] = relationship()

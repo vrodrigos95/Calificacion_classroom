@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { api, type Submission, type SubmissionStatus } from './api'
 import { DownloadBar, DownloadCell, PageStrip } from './downloads'
+import { MarkCell, MarkCrops, MarksToolbar } from './marks'
 import { useDownloads } from './useDownloads'
 import { useApi } from './useApi'
 
@@ -156,9 +157,16 @@ export function SubmissionsPage() {
           </p>
           <DownloadBar
             status={downloads.status}
-            starting={downloads.starting}
+            starting={downloads.busy}
             error={downloads.error}
-            onStart={() => void downloads.start()}
+            onStart={() => void downloads.startDownload()}
+          />
+          <MarksToolbar
+            status={downloads.status}
+            busy={downloads.busy}
+            onToggle={(enabled) => void downloads.setModule(enabled)}
+            onDetect={() => void downloads.detectMarks()}
+            onConfirmAll={() => void downloads.confirmAll()}
           />
           <table>
             <thead>
@@ -167,6 +175,7 @@ export function SubmissionsPage() {
                 <th>Estado</th>
                 <th>Archivos</th>
                 <th>Imágenes</th>
+                <th>Marca</th>
                 <th>Classroom</th>
               </tr>
             </thead>
@@ -177,7 +186,12 @@ export function SubmissionsPage() {
                 return (
                 <Fragment key={s.id}>
                 <tr className={`row-${s.status}`}>
-                  <td>{s.student_name}</td>
+                  <td>
+                    <div className="student">
+                      {s.student_name}
+                      <MarkCrops d={d} />
+                    </div>
+                  </td>
                   <td>
                     <span className={`badge badge-${s.status}`}>{STATUS_LABEL[s.status]}</span>
                     {/* Classroom marca "late" también a quien no entregó y ya venció; ahí no aporta. */}
@@ -190,6 +204,9 @@ export function SubmissionsPage() {
                     <DownloadCell d={d} open={open} onToggle={() => setOpenRow(open ? null : s.id)} />
                   </td>
                   <td>
+                    <MarkCell d={d} busy={downloads.busy} onDecide={(c) => void downloads.decide(s.id, c)} />
+                  </td>
+                  <td>
                     <a href={s.alternate_link} target="_blank" rel="noreferrer">
                       Ver entrega
                     </a>
@@ -197,7 +214,7 @@ export function SubmissionsPage() {
                 </tr>
                 {open && d && (
                   <tr className="pages-row">
-                    <td colSpan={5}>
+                    <td colSpan={6}>
                       <PageStrip d={d} />
                     </td>
                   </tr>

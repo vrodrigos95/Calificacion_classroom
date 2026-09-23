@@ -40,6 +40,8 @@ header {
   border-bottom: 1px solid var(--border);
 }
 header button { margin-left: 8px; }
+.brand { font-weight: 700; color: var(--text); text-decoration: none; }
+.header-right { display: flex; align-items: center; gap: 14px; }
 
 main { max-width: 1100px; margin: 0 auto; padding: 16px; }
 
@@ -113,3 +115,27 @@ button.link { border: none; background: none; padding: 0; color: var(--accent); 
 .page-strip { display: flex; gap: 10px; overflow-x: auto; padding: 6px 0; }
 .page-strip a { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.8rem; text-decoration: none; color: var(--muted); }
 .page-strip img { height: 220px; width: auto; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+
+/* Módulo de marca */
+.student { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mark-crops { display: inline-flex; gap: 4px; }
+.mark-crops img { height: 56px; width: auto; border: 2px solid var(--border); border-radius: 4px; background: #fff; }
+.mark-con_marca .mark-label { color: var(--ok); font-weight: 600; }
+.mark-dudosa .mark-label, .mark-error .mark-label { color: var(--warn); font-weight: 600; }
+.mark-sin_marca .mark-label, .mark-desactivado .mark-label, .mark-sin_config .mark-label { color: var(--muted); }
+.mark-detail { font-size: 0.8rem; color: var(--muted); max-width: 260px; }
+.mark-actions { display: flex; gap: 6px; margin-top: 4px; }
+.mark-actions button { padding: 4px 8px; font-size: 0.85rem; }
+.toggle { display: inline-flex; align-items: center; gap: 4px; }
+.info, .warn-box { padding: 10px 12px; border-radius: 6px; margin: 12px 0; border: 1px solid var(--border); }
+.info { border-color: var(--ok); }
+.warn-box { border-color: var(--warn); }
+.warn { color: var(--warn); }
+.mark-card { display: flex; gap: 16px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin: 12px 0; }
+.ref-strip { display: flex; gap: 8px; flex-wrap: wrap; min-width: 120px; }
+.ref-strip img { height: 110px; width: auto; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+.mark-form { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 240px; }
+.mark-form label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; }
+.mark-form label.toggle { flex-direction: row; }
+.mark-form select, .mark-form input:not([type="checkbox"]) { font: inherit; padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+.mark-card-actions { display: flex; gap: 8px; }
