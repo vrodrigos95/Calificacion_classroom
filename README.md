@@ -12,7 +12,7 @@ calificación y un comentario sugeridos, y el docente los captura a mano.
 | Etapa | Contenido | Estado |
 |---|---|---|
 | 1 | OAuth y listado de cursos, tareas y entregas | ✅ |
-| 2 | Descarga y conversión a imágenes | pendiente |
+| 2 | Descarga y conversión a imágenes | ✅ (falta probar Drive con tu cuenta) |
 | 3 | Módulo de marca de validación | pendiente |
 | 4 | Calificación de una entrega | pendiente |
 | 5 | Procesamiento por lote y panel | pendiente |
@@ -83,6 +83,16 @@ npm run dev
 Vite reenvía `/api` al backend, así que la cookie de sesión y el redirect de OAuth
 usan el mismo origen (`localhost:5173`).
 
+## Actualizar a una versión nueva
+
+```powershell
+git pull
+cd backend
+.\.venv\Scripts\Activate.ps1
+pip install -e ".[dev]"     # por si hay librerías nuevas
+alembic upgrade head        # por si hay tablas nuevas
+```
+
 ## Pruebas
 
 ```bash
@@ -94,5 +104,6 @@ cd frontend && npm run build && npm run lint
 
 - De los alumnos solo se guarda lo necesario para el panel; nunca su correo.
 - Los logs pasan por un filtro que enmascara correos y nombres; el código solo registra IDs internos.
-- Las imágenes descargadas se borrarán tras `RETENTION_DAYS` días (etapa 2).
+- Las imágenes descargadas se borran tras `RETENTION_DAYS` días (configurable por docente).
+- Los tracebacks de errores también pasan por el filtro de nombres.
 - El refresh token de Google se guarda cifrado (Fernet, `TOKEN_ENCRYPTION_KEY`).

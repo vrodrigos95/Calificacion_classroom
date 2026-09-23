@@ -17,3 +17,6 @@ __pycache__/
 # Node
 node_modules/
 frontend/dist/
+
+# Archivos reales de prueba (hojas de alumnos, firma del docente). Nunca se versionan.
+backend/tests/fixtures_private/

@@ -49,6 +49,36 @@ export interface SubmissionsResponse {
   submissions: Submission[]
 }
 
+export type DownloadState =
+  | 'sin_entrega'
+  | 'pendiente'
+  | 'descargando'
+  | 'lista'
+  | 'error'
+  | 'expirada'
+
+export interface PageInfo {
+  id: number
+  index: number
+  width: number
+  height: number
+}
+
+export interface SubmissionDownload {
+  status: DownloadState
+  error: string | null
+  pages: PageInfo[]
+}
+
+export interface DownloadStatus {
+  running: boolean
+  counts: Partial<Record<DownloadState, number>>
+  /** clave: id de la entrega en Classroom */
+  submissions: Record<string, SubmissionDownload>
+}
+
+export const pageImageUrl = (pageId: number) => `/api/pages/${pageId}`
+
 export class ApiError extends Error {
   status: number
   constructor(status: number, message: string) {
@@ -78,6 +108,15 @@ export const api = {
   courses: () => request<Course[]>('/api/courses'),
   coursework: (courseId: string) =>
     request<CourseWork[]>(`/api/courses/${encodeURIComponent(courseId)}/coursework`),
+  downloadStatus: (courseId: string, cwId: string) =>
+    request<DownloadStatus>(
+      `/api/courses/${encodeURIComponent(courseId)}/coursework/${encodeURIComponent(cwId)}/download`,
+    ),
+  startDownload: (courseId: string, cwId: string) =>
+    request<DownloadStatus>(
+      `/api/courses/${encodeURIComponent(courseId)}/coursework/${encodeURIComponent(cwId)}/download`,
+      { method: 'POST' },
+    ),
   submissions: (courseId: string, cwId: string) =>
     request<SubmissionsResponse>(
       `/api/courses/${encodeURIComponent(courseId)}/coursework/${encodeURIComponent(cwId)}/submissions`,

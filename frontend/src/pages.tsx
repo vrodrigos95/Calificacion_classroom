@@ -1,5 +1,8 @@
+import { Fragment, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { api, type Submission, type SubmissionStatus } from './api'
+import { DownloadBar, DownloadCell, PageStrip } from './downloads'
+import { useDownloads } from './useDownloads'
 import { useApi } from './useApi'
 
 const LOGIN_ERRORS: Record<string, string> = {
@@ -129,6 +132,8 @@ function AttachmentList({ s }: { s: Submission }) {
 export function SubmissionsPage() {
   const { courseId = '', cwId = '' } = useParams()
   const { data, error, loading } = useApi(() => api.submissions(courseId, cwId), [courseId, cwId])
+  const downloads = useDownloads(courseId, cwId)
+  const [openRow, setOpenRow] = useState<string | null>(null)
   return (
     <section>
       <p>
@@ -149,18 +154,29 @@ export function SubmissionsPage() {
             {data.summary.entregadas} entregadas · {data.summary.sin_archivos} sin archivos ·{' '}
             {data.summary.sin_entrega} sin entrega · {data.summary.total} alumnos
           </p>
+          <DownloadBar
+            status={downloads.status}
+            starting={downloads.starting}
+            error={downloads.error}
+            onStart={() => void downloads.start()}
+          />
           <table>
             <thead>
               <tr>
                 <th>Alumno</th>
                 <th>Estado</th>
                 <th>Archivos</th>
+                <th>Imágenes</th>
                 <th>Classroom</th>
               </tr>
             </thead>
             <tbody>
-              {data.submissions.map((s) => (
-                <tr key={s.id} className={`row-${s.status}`}>
+              {data.submissions.map((s) => {
+                const d = downloads.status?.submissions[s.id]
+                const open = openRow === s.id && d?.status === 'lista'
+                return (
+                <Fragment key={s.id}>
+                <tr className={`row-${s.status}`}>
                   <td>{s.student_name}</td>
                   <td>
                     <span className={`badge badge-${s.status}`}>{STATUS_LABEL[s.status]}</span>
@@ -171,12 +187,24 @@ export function SubmissionsPage() {
                     <AttachmentList s={s} />
                   </td>
                   <td>
+                    <DownloadCell d={d} open={open} onToggle={() => setOpenRow(open ? null : s.id)} />
+                  </td>
+                  <td>
                     <a href={s.alternate_link} target="_blank" rel="noreferrer">
                       Ver entrega
                     </a>
                   </td>
                 </tr>
-              ))}
+                {open && d && (
+                  <tr className="pages-row">
+                    <td colSpan={5}>
+                      <PageStrip d={d} />
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
+                )
+              })}
             </tbody>
           </table>
         </>

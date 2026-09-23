@@ -100,3 +100,16 @@ th { font-size: 0.85rem; color: var(--muted); }
   tr { border-bottom: 1px solid var(--border); padding: 6px 0; }
   td { border: none; padding: 2px 10px; }
 }
+
+.download-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 8px 0 16px; }
+.download-bar button:disabled { opacity: 0.6; cursor: progress; }
+.alert-inline { color: var(--bad); }
+button.link { border: none; background: none; padding: 0; color: var(--accent); text-decoration: underline; }
+.dl { font-size: 0.85rem; }
+.dl-error { color: var(--bad); font-size: 0.8rem; max-width: 240px; }
+.dl-pendiente, .dl-descargando { color: var(--muted); }
+.dl-expirada { color: var(--muted); }
+.pages-row td { background: var(--bg); }
+.page-strip { display: flex; gap: 10px; overflow-x: auto; padding: 6px 0; }
+.page-strip a { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.8rem; text-decoration: none; color: var(--muted); }
+.page-strip img { height: 220px; width: auto; border: 1px solid var(--border); border-radius: 4px; background: #fff; }

@@ -1,18 +1,56 @@
+import asyncio
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from google.auth.exceptions import RefreshError
 from googleapiclient.errors import HttpError
+from starlette.concurrency import run_in_threadpool
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.api import auth, classroom
+from app.api import auth, classroom, downloads
 from app.auth.google_oauth import OAuthError, invalidate_credentials
 from app.auth.token_crypto import TokenCryptoError
 from app.config import get_settings
+from app.db.session import SessionLocal
 from app.logging_conf import setup_logging
+from app.pipeline.download import reset_interrupted
+from app.retention.cleanup import purge_expired_images
 
 log = logging.getLogger(__name__)
+
+RETENTION_INTERVAL_S = 6 * 60 * 60
+
+
+def _startup_maintenance() -> None:
+    with SessionLocal() as db:
+        n = reset_interrupted(db)
+        if n:
+            log.info("%s entregas interrumpidas vuelven a la cola", n)
+        purge_expired_images(db)
+
+
+def _purge() -> None:
+    with SessionLocal() as db:
+        purge_expired_images(db)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await run_in_threadpool(_startup_maintenance)
+
+    async def retention_loop():
+        while True:
+            await asyncio.sleep(RETENTION_INTERVAL_S)
+            try:
+                await run_in_threadpool(_purge)
+            except Exception:
+                log.exception("Falló la limpieza por retención")
+
+    task = asyncio.create_task(retention_loop())
+    yield
+    task.cancel()
 
 
 def create_app() -> FastAPI:
@@ -21,7 +59,7 @@ def create_app() -> FastAPI:
     if not settings.session_secret:
         raise RuntimeError("Falta SESSION_SECRET en el entorno")
 
-    app = FastAPI(title="Revisor de tareas Classroom")
+    app = FastAPI(title="Revisor de tareas Classroom", lifespan=lifespan)
     app.add_middleware(
         SessionMiddleware,
         secret_key=settings.session_secret,
@@ -32,6 +70,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(auth.router)
     app.include_router(classroom.router)
+    app.include_router(downloads.router)
 
     @app.exception_handler(RefreshError)
     @app.exception_handler(OAuthError)

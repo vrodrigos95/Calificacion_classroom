@@ -14,6 +14,9 @@ dependencies = [
     "google-api-python-client>=2.140",
     "cryptography>=43",
     "itsdangerous>=2.2",
+    "pymupdf>=1.24",
+    "pillow>=11",
+    "pillow-heif>=0.18",
 ]
 
 [project.optional-dependencies]
