@@ -7,6 +7,14 @@ calificación y un comentario sugeridos, y el docente los captura a mano.
 - Backend: Python 3.11+, FastAPI, SQLAlchemy + Alembic (SQLite en v1)
 - Frontend: React + TypeScript (Vite)
 
+## Guías
+
+- 📘 **[Guía de uso](docs/USO.md)**: cómo usar la app paso a paso.
+- 💻 **[Instalar en otra computadora](docs/INSTALACION.md)**: instalación paso a paso en Windows.
+
+En Windows basta con doble clic en `instalar.bat` (una vez), `iniciar.bat` (cada vez que la
+uses) y `actualizar.bat` (cuando haya versión nueva).
+
 ## Estado
 
 | Etapa | Contenido | Estado |
@@ -45,14 +53,17 @@ calificación y un comentario sugeridos, y el docente los captura a mano.
 | `classroom.rosters.readonly` | Nombres de los alumnos |
 | `drive.readonly` | Descargar los archivos entregados (solo v1, modo prueba) |
 
-## Correr en local
+## Correr en local (desarrollo)
+
+En Windows lo más simple es `instalar.bat` e `iniciar.bat` (ver [INSTALACION.md](docs/INSTALACION.md)).
+A mano:
 
 ```bash
 # Backend
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-cp ../.env.example .env        # y llena los valores
+python scripts/crear_env.py   # crea .env y genera las claves; luego llena los de Google
 alembic upgrade head
 uvicorn app.main:app --reload --port 8000
 
@@ -70,7 +81,7 @@ cd backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1   # si falla: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 pip install -e ".[dev]"
-copy ..\.env.example .env       # y llena los valores con: notepad .env
+python scripts\crear_env.py    # crea .env y genera las claves; llena los de Google con: notepad .env
 alembic upgrade head
 uvicorn app.main:app --reload --port 8000
 
