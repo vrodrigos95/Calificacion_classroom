@@ -139,3 +139,25 @@ button.link { border: none; background: none; padding: 0; color: var(--accent); 
 .mark-form label.toggle { flex-direction: row; }
 .mark-form select, .mark-form input:not([type="checkbox"]) { font: inherit; padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
 .mark-card-actions { display: flex; gap: 8px; }
+
+/* Clave y calificación */
+.key-banner { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
+.key-validada { border-color: var(--ok); }
+.key-sin_validar, .key-error { border-color: var(--warn); }
+.grade-score { font-size: 1.05rem; font-weight: 700; }
+.grade-ok { color: var(--ok); font-size: 0.85rem; }
+.grade-warn { color: var(--warn); font-size: 0.85rem; }
+.small-btn { padding: 4px 8px; font-size: 0.85rem; margin-top: 4px; }
+button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.grade-detail { margin: 6px 0 12px; }
+.ex-table { margin: 6px 0; }
+.ex-table td, .ex-table th { padding: 4px 8px; }
+.ex-badge-correcto { color: var(--ok); }
+.ex-badge-error_menor, .ex-badge-por_revisar, .ex-badge-no_evaluado { color: var(--warn); }
+.ex-badge-incorrecto, .ex-badge-incompleto, .ex-badge-no_contestado, .ex-badge-ilegible { color: var(--bad); }
+.comment-box { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; max-width: 760px; }
+.comment-box p { margin: 4px 0 8px; }
+.key-modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.key-modes textarea, .key-table textarea, .key-table input { width: 100%; font: inherit; padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+.key-table input.num { width: 4em; }
+.key-table td { vertical-align: top; }

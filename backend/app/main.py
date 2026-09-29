@@ -9,12 +9,14 @@ from googleapiclient.errors import HttpError
 from starlette.concurrency import run_in_threadpool
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.api import auth, classroom, downloads, marks
+from app.api import auth, classroom, downloads, grading, marks
 from app.auth.google_oauth import OAuthError, invalidate_credentials
 from app.auth.token_crypto import TokenCryptoError
 from app.config import get_settings
 from app.db.session import SessionLocal
 from app.logging_conf import setup_logging
+from app.answer_key.service import reset_interrupted as reset_key_jobs
+from app.grading.grader import reset_interrupted as reset_grading
 from app.pipeline.download import reset_interrupted
 from app.retention.cleanup import purge_expired_images
 
@@ -28,6 +30,8 @@ def _startup_maintenance() -> None:
         n = reset_interrupted(db)
         if n:
             log.info("%s entregas interrumpidas vuelven a la cola", n)
+        reset_key_jobs(db)
+        reset_grading(db)
         purge_expired_images(db)
 
 
@@ -72,6 +76,7 @@ def create_app() -> FastAPI:
     app.include_router(classroom.router)
     app.include_router(downloads.router)
     app.include_router(marks.router)
+    app.include_router(grading.router)
 
     @app.exception_handler(RefreshError)
     @app.exception_handler(OAuthError)

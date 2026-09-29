@@ -88,6 +88,7 @@ def sync_submissions(
                 delete_page_files(sub.id)
             sub.pages.clear()
             clear_mark_results(sub)
+            sub.grade = None  # la calificación anterior ya no aplica
             sub.download_status, sub.error = DL_SIN_ENTREGA, None
         elif not live.attachments:
             sub.pages.clear()
@@ -97,6 +98,7 @@ def sync_submissions(
             # Nueva entrega o volvió a entregar con otros archivos.
             sub.download_status, sub.error = DL_PENDIENTE, None
             clear_mark_results(sub)
+            sub.grade = None  # la calificación anterior ya no aplica
         sub.attachment_ids = ids if live.delivered else ""
     db.commit()
     return assignment
@@ -125,6 +127,7 @@ def process_submission(submission_id: int, source: FileSource) -> None:
             out_dir.mkdir(parents=True, exist_ok=True)
             sub.pages.clear()
             clear_mark_results(sub)
+            sub.grade = None  # la calificación anterior ya no aplica
             index = 0
             for file_id in sub.attachment_ids.split():
                 fetched = source.fetch(file_id)

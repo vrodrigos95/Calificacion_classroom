@@ -1,5 +1,6 @@
 import { BrowserRouter, Link, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { api } from './api'
+import { KeyPage } from './KeyPage'
 import { MarksPage } from './MarksPage'
 import { CourseWorkPage, CoursesPage, LoginPage, SubmissionsPage } from './pages'
 import { useApi } from './useApi'
@@ -40,6 +41,7 @@ export default function App() {
           <Route path="/" element={<CoursesPage />} />
           <Route path="/cursos/:courseId" element={<CourseWorkPage />} />
           <Route path="/cursos/:courseId/tareas/:cwId" element={<SubmissionsPage />} />
+          <Route path="/cursos/:courseId/tareas/:cwId/clave" element={<KeyPage />} />
           <Route path="/configuracion" element={<MarksPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

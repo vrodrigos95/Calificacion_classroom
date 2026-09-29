@@ -102,14 +102,45 @@ la casilla **Activa**.
 - **Deshacer:** si te equivocas, clic en **deshacer** junto a tu decisión.
 - Tus decisiones **no se pierden** aunque vuelvas a dar "Revisar marcas".
 
-### 4.4 Capturar en Classroom
+### 4.4 Preparar la clave de respuestas (solo para tareas sin tu firma)
+
+Las entregas con tu firma valen 100 sin clave. Para calificar las demás hace falta una clave
+**validada por ti**: la app nunca califica con una clave sin validar.
+
+1. En la tarea, clic en **Preparar la clave de respuestas →**.
+2. Elige una forma:
+   - **Capturarla tú** en la tabla (número, respuesta correcta y, si quieres, enunciado,
+     procedimiento esperado y notación exigida, p. ej. "en porcentaje; usar ∪"). No necesita Claude.
+   - **A. Subir mi clave:** escríbela o sube una foto o PDF; Claude la acomoda en la tabla.
+   - **B. Resolver con Claude:** busca el enunciado en la descripción y adjuntos de la tarea;
+     si no está, en las hojas de los alumnos (descárgalas antes). Si distintos alumnos tienen
+     enunciados diferentes, te avisa.
+3. **Revisa y corrige** la tabla y da clic en **Validar clave**. Si luego la cambias, se
+   tiene que validar otra vez, y las calificaciones hechas con la clave anterior se marcan.
+4. Abajo eliges cuánto vale un **error menor** en esta tarea (por defecto, la mitad).
+
+### 4.5 Calificar una entrega
+
+1. En la columna **Calificación**, clic en **Calificar** (necesita la clave de Claude).
+2. En unos segundos aparece la calificación sugerida sobre 100:
+   - **Revisada:** Claude leyó todo con claridad. Solo revisa y copia.
+   - **Revisar a mano:** algo fue ilegible, ambiguo o dudoso. La calificación es solo una
+     sugerencia; pasa el mouse para ver el motivo.
+3. Clic en el número para ver el **detalle por ejercicio** (correcto, error menor,
+   incorrecto…), el **comentario sugerido** para el alumno (botón **Copiar comentario**) y las
+   páginas.
+
+Reglas: cada ejercicio vale 100 / número de ejercicios; error menor = la mitad (o lo que
+configures). Un ejercicio que Claude no leyó con claridad **nunca** cuenta como correcto.
+
+### 4.6 Capturar en Classroom
 1. Clic en **Ver entrega** en la fila del alumno: se abre su entrega en Classroom.
 2. Captura la calificación (por ejemplo 100 si dice "Con marca · 100").
 
 > En la etapa 5 la tabla tendrá un botón para **copiar calificación y comentario** y una
 > casilla **Capturado** para llevar el control.
 
-### 4.5 Si un alumno entrega después o vuelve a entregar
+### 4.7 Si un alumno entrega después o vuelve a entregar
 Clic en **Actualizar y reintentar errores**. La app descarga solo lo nuevo, lo que cambió y lo
 que había fallado. Después, **Revisar marcas** otra vez: tus decisiones anteriores se respetan,
 salvo en los alumnos que volvieron a entregar, que se revisan desde cero.
@@ -144,7 +175,6 @@ salvo en los alumnos que volvieron a entregar, que se revisan desde cero.
 
 | Etapa | Qué agrega |
 |---|---|
-| 4 | Calificar los ejercicios de las tareas **sin** tu firma, con comentario sugerido. |
 | 5 | Procesar toda la tarea de un solo clic, botón de copiar calificación y comentario, casilla "Capturado". |
 | 6 | Señalar posibles copias entre alumnos. |
 

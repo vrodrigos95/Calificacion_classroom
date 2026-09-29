@@ -6,7 +6,6 @@ Reglas de seguridad (en marks/service.py):
   docente confirme con el recorte a la vista.
 """
 
-import base64
 import io
 import logging
 from dataclasses import dataclass
@@ -17,6 +16,7 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from app.config import get_settings
+from app.vision.claude_client import ClaudeClient, VisionError, image_block, text_block
 
 log = logging.getLogger(__name__)
 
@@ -44,8 +44,8 @@ class CandidateVerdict:
     verifier: str  # "local" | "claude"
 
 
-class VerificationError(RuntimeError):
-    """La verificación no se pudo completar; la entrega va a revisión manual."""
+# La verificación no se pudo completar; la entrega va a revisión manual.
+VerificationError = VisionError
 
 
 class Verifier(Protocol):
@@ -109,78 +109,30 @@ Criterios:
 Devuelve un elemento por cada candidato recibido, con su candidato_id exacto."""
 
 
-def _png_block(png: bytes) -> dict:
-    return {
-        "type": "image",
-        "source": {"type": "base64", "media_type": "image/png", "data": base64.standard_b64encode(png).decode()},
-    }
-
-
-# Modelos con fallback de rechazo del lado del servidor (modo "default").
-_FALLBACK_MODELS = {"claude-opus-5", "claude-fable-5-1"}
-
-
 class ClaudeVerifier:
     name = "claude"
 
     def __init__(self, client: anthropic.Anthropic | None = None, model: str | None = None):
-        settings = get_settings()
-        self.model = model or settings.claude_model
-        self.client = client or anthropic.Anthropic(api_key=settings.anthropic_api_key, max_retries=3)
+        self.claude = ClaudeClient(client, model)
 
     def verify(self, refs, crops):
         content: list[dict] = []
         for ref in refs:
-            content.append({"type": "text", "text": f"Marca de referencia id={ref.mark_id} («{ref.name}»):"})
-            content.extend(_png_block(p) for p in ref.images_png)
-        content.append({"type": "text", "text": "Candidatos encontrados en la hoja del alumno:"})
+            content.append(text_block(f"Marca de referencia id={ref.mark_id} («{ref.name}»):"))
+            content.extend(image_block(p, "image/png") for p in ref.images_png)
+        content.append(text_block("Candidatos encontrados en la hoja del alumno:"))
         for c in crops:
-            content.append({"type": "text", "text": f"candidato_id={c.candidate_id}"})
-            content.append(_png_block(c.png))
-        content.append({"type": "text", "text": "Evalúa cada candidato."})
-
-        kwargs = {}
-        if self.model in _FALLBACK_MODELS:
-            kwargs = {"betas": ["server-side-fallback-2026-07-01"], "fallbacks": "default"}
-        try:
-            resp = self.client.beta.messages.parse(
-                model=self.model,
-                max_tokens=16000,
-                system=SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": content}],
-                output_format=MarkVerificationOut,
-                **kwargs,
-            )
-        except anthropic.AuthenticationError as exc:
-            raise VerificationError("La clave de la API de Claude no es válida") from exc
-        except anthropic.PermissionDeniedError as exc:
-            raise VerificationError("La clave de la API de Claude no tiene permiso para este modelo") from exc
-        except anthropic.RateLimitError as exc:
-            raise VerificationError("Claude limitó las peticiones; reintenta en un minuto") from exc
-        except anthropic.BadRequestError as exc:
-            if "credit" in str(exc).lower():
-                raise VerificationError("Tu cuenta de la API de Claude no tiene crédito") from exc
-            raise VerificationError("Claude rechazó la petición (400)") from exc
-        except anthropic.APIStatusError as exc:
-            raise VerificationError(f"Error de la API de Claude ({exc.status_code})") from exc
-        except anthropic.APIConnectionError as exc:
-            raise VerificationError("Sin conexión con la API de Claude") from exc
-
-        if resp.stop_reason == "refusal":
-            raise VerificationError("Claude se negó a evaluar esta imagen")
-        if resp.stop_reason == "max_tokens" or resp.parsed_output is None:
-            raise VerificationError("Claude no devolvió una respuesta completa")
-        log.info(
-            "Verificación de marca: %s candidatos, tokens entrada=%s salida=%s",
-            len(crops),
-            resp.usage.input_tokens,
-            resp.usage.output_tokens,
+            content.append(text_block(f"candidato_id={c.candidate_id}"))
+            content.append(image_block(c.png, "image/png"))
+        content.append(text_block("Evalúa cada candidato."))
+        parsed, _ = self.claude.structured(
+            SYSTEM_PROMPT, content, MarkVerificationOut, purpose=f"verificación de marca ({len(crops)} candidatos)"
         )
 
         valid_ids = {c.candidate_id for c in crops}
         valid_marks = {r.mark_id for r in refs}
         out = []
-        for item in resp.parsed_output.candidatos:
+        for item in parsed.candidatos:
             if item.candidato_id not in valid_ids:
                 continue
             conf = item.confianza

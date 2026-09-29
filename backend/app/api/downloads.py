@@ -1,3 +1,4 @@
+import json
 from collections.abc import Callable
 from pathlib import Path
 
@@ -6,6 +7,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.answer_key.service import key_state
 from app.api.deps import classroom_reader, current_teacher
 from app.auth.google_oauth import credentials_for
 from app.classroom.client import ClassroomReader
@@ -48,6 +50,16 @@ class DetectionOut(BaseModel):
     page_index: int
 
 
+class GradeOut(BaseModel):
+    status: str  # calificando | revisada | revisar_a_mano | con_marca | error
+    score: float | None
+    comment: str | None
+    review_reasons: list[str]
+    exercises: list[dict]
+    error: str | None
+    stale: bool  # se calificó con una versión anterior de la clave
+
+
 class SubmissionDownloadOut(BaseModel):
     status: str
     error: str | None
@@ -57,20 +69,46 @@ class SubmissionDownloadOut(BaseModel):
     mark_detail: str | None
     mark_confirmed: bool | None
     detections: list[DetectionOut]  # solo marcas y dudosas, con su recorte
-    suggested_score: float | None  # 100 si tiene marca "tarea correcta"
+    suggested_score: float | None  # 100 si tiene marca "tarea correcta"; si no, la de la calificación
+    grade: GradeOut | None
 
 
 class DownloadStatusOut(BaseModel):
     running: bool
     marks_running: bool
+    grading_running: bool
+    key_state: str
     mark_module_enabled: bool
     counts: dict[str, int]
     # clave: id de la entrega en Classroom (el mismo que usa el listado)
     submissions: dict[str, SubmissionDownloadOut]
 
 
+def _grade_out(s: Submission) -> GradeOut | None:
+    g = s.grade
+    if g is None:
+        return None
+    key = s.assignment.answer_key
+    return GradeOut(
+        status=g.status,
+        score=g.score,
+        comment=g.comment,
+        review_reasons=(g.review_reasons or "").splitlines(),
+        exercises=json.loads(g.detail_json or "[]"),
+        error=g.error,
+        stale=bool(key and g.key_version is not None and g.key_version != key.version and g.status != "con_marca"),
+    )
+
+
 def _submission_out(s: Submission) -> SubmissionDownloadOut:
     mark_status = mark_service.effective_status(s)
+    grade = _grade_out(s)
+    if mark_status == MK_CON_MARCA:
+        suggested = 100.0
+    elif grade and grade.status in ("revisada", "revisar_a_mano") and not grade.stale:
+        suggested = grade.score
+    else:
+        suggested = None
     return SubmissionDownloadOut(
         status=s.download_status,
         error=s.error,
@@ -92,14 +130,21 @@ def _submission_out(s: Submission) -> SubmissionDownloadOut:
             for d in s.detections
             if d.verdict in (V_MARCA, V_DUDOSA)
         ],
-        suggested_score=100.0 if mark_status == MK_CON_MARCA else None,
+        suggested_score=suggested,
+        grade=grade,
     )
 
 
 def _status(assignment: Assignment | None) -> DownloadStatusOut:
     if assignment is None:
         return DownloadStatusOut(
-            running=False, marks_running=False, mark_module_enabled=True, counts={}, submissions={}
+            running=False,
+            marks_running=False,
+            grading_running=False,
+            key_state="sin_clave",
+            mark_module_enabled=True,
+            counts={},
+            submissions={},
         )
     counts: dict[str, int] = {}
     subs = {}
@@ -109,6 +154,8 @@ def _status(assignment: Assignment | None) -> DownloadStatusOut:
     return DownloadStatusOut(
         running=download.is_running(assignment.id),
         marks_running=mark_service.is_running(assignment.id),
+        grading_running=any(s.grade is not None and s.grade.status == "calificando" for s in assignment.submissions),
+        key_state=key_state(assignment.answer_key),
         mark_module_enabled=assignment.mark_module_enabled,
         counts=counts,
         submissions=subs,

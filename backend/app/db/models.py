@@ -3,6 +3,7 @@
 Etapa 1: docente, token OAuth y configuración por docente.
 Etapa 2: tareas, entregas y páginas descargadas.
 Etapa 3: marcas de validación del docente y su detección en cada entrega.
+Etapa 4: clave de respuestas por tarea y calificación de cada entrega.
 
 De los alumnos solo se guarda lo necesario para el panel: su userId de Classroom,
 su nombre y el enlace a la entrega. Nunca su correo.
@@ -101,6 +102,9 @@ class Assignment(Base):
     submissions: Mapped[list["Submission"]] = relationship(
         back_populates="assignment", cascade="all, delete-orphan"
     )
+    answer_key: Mapped["AnswerKey | None"] = relationship(
+        back_populates="assignment", uselist=False, cascade="all, delete-orphan"
+    )
 
 
 # Estados de descarga de una entrega
@@ -143,6 +147,9 @@ class Submission(Base):
     )
     detections: Mapped[list["MarkDetection"]] = relationship(
         back_populates="submission", cascade="all, delete-orphan", order_by="MarkDetection.id"
+    )
+    grade: Mapped["Grade | None"] = relationship(
+        back_populates="submission", uselist=False, cascade="all, delete-orphan"
     )
 
 
@@ -240,3 +247,68 @@ class MarkDetection(Base):
 
     submission: Mapped[Submission] = relationship(back_populates="detections")
     mark: Mapped[ValidationMark | None] = relationship()
+
+
+# Origen de la clave de respuestas
+KEY_DOCENTE = "docente"  # el docente la subió (texto, foto o PDF) o la capturó
+KEY_RESUELTA = "resuelta_por_modelo"  # el modelo resolvió los enunciados
+
+# Estado del trabajo en segundo plano sobre la clave
+KJ_LISTA = "lista"
+KJ_GENERANDO = "generando"
+KJ_ERROR = "error"
+
+
+class AnswerKey(Base):
+    """Clave de respuestas de una tarea. Nunca se califica con una clave sin validar."""
+
+    __tablename__ = "answer_keys"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    assignment_id: Mapped[int] = mapped_column(
+        ForeignKey("assignments.id", ondelete="CASCADE"), unique=True
+    )
+    source: Mapped[str] = mapped_column(String(30), default=KEY_DOCENTE)
+    # De dónde salió el enunciado (descripción/adjuntos de Classroom, hojas de alumnos…)
+    statement_source: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    exercises_json: Mapped[str] = mapped_column(Text, default="[]")
+    warning: Mapped[str | None] = mapped_column(Text, nullable=True)
+    version: Mapped[int] = mapped_column(Integer, default=1)  # sube con cada cambio
+    validated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    job_status: Mapped[str] = mapped_column(String(20), default=KJ_LISTA)
+    job_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    assignment: Mapped[Assignment] = relationship(back_populates="answer_key")
+
+
+# Estado de la calificación de una entrega
+G_CALIFICANDO = "calificando"
+G_REVISADA = "revisada"  # lista: el docente solo revisa y copia
+G_REVISAR = "revisar_a_mano"  # hay algo ilegible, ambiguo o dudoso: sugerida pero no lista
+G_CON_MARCA = "con_marca"  # 100 por marca "tarea correcta", sin revisar contenido
+G_ERROR = "error"
+
+
+class Grade(Base):
+    """Calificación sugerida de una entrega."""
+
+    __tablename__ = "grades"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    submission_id: Mapped[int] = mapped_column(
+        ForeignKey("submissions.id", ondelete="CASCADE"), unique=True
+    )
+    status: Mapped[str] = mapped_column(String(20), default=G_CALIFICANDO)
+    key_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    score: Mapped[float | None] = mapped_column(Float, nullable=True)  # sobre 100
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)  # sugerido
+    review_reasons: Mapped[str | None] = mapped_column(Text, nullable=True)  # por qué revisar a mano
+    detail_json: Mapped[str] = mapped_column(Text, default="[]")  # resultado por ejercicio
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    model: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    submission: Mapped[Submission] = relationship(back_populates="grade")

@@ -84,6 +84,34 @@ export interface Detection {
   page_index: number
 }
 
+export type GradeStatus = 'calificando' | 'revisada' | 'revisar_a_mano' | 'con_marca' | 'error'
+
+export interface ExerciseResult {
+  numero: string
+  estado: string
+  puntos: number
+  valor: number
+  legibilidad: string
+  confianza: number
+  tipo_error: string
+  descripcion_error: string
+  comentario_alumno: string
+  transcripcion_resultado: string
+  valores_intermedios: string[]
+  paginas: number[]
+  motivo_revision: string
+}
+
+export interface Grade {
+  status: GradeStatus
+  score: number | null
+  comment: string | null
+  review_reasons: string[]
+  exercises: ExerciseResult[]
+  error: string | null
+  stale: boolean
+}
+
 export interface SubmissionDownload {
   status: DownloadState
   error: string | null
@@ -93,11 +121,14 @@ export interface SubmissionDownload {
   mark_confirmed: boolean | null
   detections: Detection[]
   suggested_score: number | null
+  grade: Grade | null
 }
 
 export interface DownloadStatus {
   running: boolean
   marks_running: boolean
+  grading_running: boolean
+  key_state: KeyState
   mark_module_enabled: boolean
   counts: Partial<Record<DownloadState, number>>
   /** clave: id de la entrega en Classroom */
@@ -118,6 +149,31 @@ export interface Mark {
   active: boolean
   colored: boolean
   references: { id: number; url: string }[]
+}
+
+export type KeyState = 'sin_clave' | 'generando' | 'error' | 'sin_validar' | 'validada'
+
+export interface KeyExercise {
+  numero: string
+  enunciado: string
+  respuesta_final: string
+  procedimiento_clave: string
+  criterios_notacion: string[]
+}
+
+export interface AnswerKey {
+  state: KeyState
+  exercises: KeyExercise[]
+  source: string | null
+  statement_source: string | null
+  warning: string | null
+  job_error: string | null
+  version: number | null
+  validated_at: string | null
+  model_available: boolean
+  minor_error_factor: number
+  minor_error_factor_override: number | null
+  teacher_minor_error_factor: number
 }
 
 export interface MarksConfig {
@@ -191,6 +247,22 @@ export const api = {
       `${cw(courseId, cwId)}/submissions/${encodeURIComponent(sid)}/mark-decision`,
       json('PUT', { confirmed }),
     ),
+  // Clave y calificación
+  key: (courseId: string, cwId: string) => request<AnswerKey>(`${cw(courseId, cwId)}/key`),
+  saveKey: (courseId: string, cwId: string, exercises: KeyExercise[]) =>
+    request<AnswerKey>(`${cw(courseId, cwId)}/key`, json('PUT', { exercises })),
+  validateKey: (courseId: string, cwId: string) =>
+    request<AnswerKey>(`${cw(courseId, cwId)}/key/validate`, { method: 'POST' }),
+  keyFromTeacher: (courseId: string, cwId: string, form: FormData) =>
+    request<AnswerKey>(`${cw(courseId, cwId)}/key/from-teacher`, { method: 'POST', body: form }),
+  solveKey: (courseId: string, cwId: string) =>
+    request<AnswerKey>(`${cw(courseId, cwId)}/key/solve`, { method: 'POST' }),
+  setMinorFactor: (courseId: string, cwId: string, factor: number | null) =>
+    request<AnswerKey>(`${cw(courseId, cwId)}/grading-settings`, json('PUT', { minor_error_factor: factor })),
+  grade: (courseId: string, cwId: string, sid: string) =>
+    request<{ started: boolean }>(`${cw(courseId, cwId)}/submissions/${encodeURIComponent(sid)}/grade`, {
+      method: 'POST',
+    }),
   confirmAllMarks: (courseId: string, cwId: string) =>
     request<{ confirmed: number }>(`${cw(courseId, cwId)}/marks/confirm-all`, { method: 'POST' }),
 }

@@ -22,7 +22,7 @@ uses) y `actualizar.bat` (cuando haya versión nueva).
 | 1 | OAuth y listado de cursos, tareas y entregas | ✅ |
 | 2 | Descarga y conversión a imágenes | ✅ |
 | 3 | Módulo de marca de validación | ✅ modo local · falta probar con Claude |
-| 4 | Calificación de una entrega | pendiente |
+| 4 | Clave de respuestas y calificación de una entrega | ✅ probado con Claude simulado · falta probar con Claude real |
 | 5 | Procesamiento por lote y panel | pendiente |
 | 6 | Detección de copias | pendiente |
 

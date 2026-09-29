@@ -54,3 +54,35 @@ def test_sdk_builds_valid_request_and_parses_structured_answer():
     assert sum(b["type"] == "image" for b in blocks) == 3
     assert all(b["source"]["media_type"] == "image/png" for b in blocks if b["type"] == "image")
     assert "temperature" not in body and "budget_tokens" not in json.dumps(body)
+
+
+def test_grading_schema_round_trip_through_real_sdk():
+    from app.grading.schemas import GradingOut
+    from app.vision.claude_client import ClaudeClient, image_block, text_block
+    from tests.test_grading_api import GRADING_75
+
+    seen = {}
+
+    def handler(request):
+        seen["body"] = json.loads(request.content)
+        return httpx.Response(
+            200,
+            json={
+                "id": "msg_2", "type": "message", "role": "assistant", "model": "claude-opus-5",
+                "content": [{"type": "text", "text": json.dumps(GRADING_75, ensure_ascii=False)}],
+                "stop_reason": "end_turn", "stop_sequence": None,
+                "usage": {"input_tokens": 4200, "output_tokens": 900},
+            },
+        )
+
+    client = anthropic.Anthropic(api_key="sk-test", http_client=httpx.Client(transport=httpx.MockTransport(handler)))
+    out, usage = ClaudeClient(client, model="claude-opus-5").structured(
+        "sistema", [text_block("clave"), image_block(b"\xff\xd8fake")], GradingOut, purpose="prueba"
+    )
+    assert [e.estado for e in out.ejercicios] == ["correcto", "correcto", "error_menor", "error_menor"]
+    assert usage.input_tokens == 4200
+    schema = seen["body"]["output_config"]["format"]["schema"]
+    text = json.dumps(schema)
+    # Enumeraciones del esquema y sin restricciones numéricas (no soportadas).
+    assert "error_menor" in text and "ilegible" in text
+    assert "minimum" not in text and "maximum" not in text

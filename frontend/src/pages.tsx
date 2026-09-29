@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { api, type Submission, type SubmissionStatus } from './api'
 import { DownloadBar, DownloadCell, PageStrip } from './downloads'
+import { GradeCell, GradeDetail, KeyBanner } from './grading'
 import { MarkCell, MarkCrops, MarksToolbar } from './marks'
 import { useDownloads } from './useDownloads'
 import { useApi } from './useApi'
@@ -168,6 +169,7 @@ export function SubmissionsPage() {
             onDetect={() => void downloads.detectMarks()}
             onConfirmAll={() => void downloads.confirmAll()}
           />
+          <KeyBanner status={downloads.status} courseId={courseId} cwId={cwId} />
           <table>
             <thead>
               <tr>
@@ -176,6 +178,7 @@ export function SubmissionsPage() {
                 <th>Archivos</th>
                 <th>Imágenes</th>
                 <th>Marca</th>
+                <th>Calificación</th>
                 <th>Classroom</th>
               </tr>
             </thead>
@@ -207,6 +210,15 @@ export function SubmissionsPage() {
                     <MarkCell d={d} busy={downloads.busy} onDecide={(c) => void downloads.decide(s.id, c)} />
                   </td>
                   <td>
+                    <GradeCell
+                      d={d}
+                      keyState={downloads.status?.key_state ?? 'sin_clave'}
+                      busy={downloads.busy}
+                      onGrade={() => void downloads.grade(s.id)}
+                      onOpen={() => setOpenRow(s.id)}
+                    />
+                  </td>
+                  <td>
                     <a href={s.alternate_link} target="_blank" rel="noreferrer">
                       Ver entrega
                     </a>
@@ -214,7 +226,8 @@ export function SubmissionsPage() {
                 </tr>
                 {open && d && (
                   <tr className="pages-row">
-                    <td colSpan={6}>
+                    <td colSpan={7}>
+                      <GradeDetail d={d} />
                       <PageStrip d={d} />
                     </td>
                   </tr>
