@@ -17,7 +17,7 @@ from app.db.session import get_db
 from app.files.base import FileSource
 from app.files.drive_readonly import DriveReadonlySource, build_drive_service
 from app.marks import service as mark_service
-from app.pipeline import download
+from app.pipeline import batch, download
 
 router = APIRouter(prefix="/api", tags=["descargas"])
 
@@ -71,9 +71,20 @@ class SubmissionDownloadOut(BaseModel):
     detections: list[DetectionOut]  # solo marcas y dudosas, con su recorte
     suggested_score: float | None  # 100 si tiene marca "tarea correcta"; si no, la de la calificación
     grade: GradeOut | None
+    # Panel (etapa 5)
+    panel_status: str  # sin_entrega | pendiente | procesando | con_marca | revisada | revisar_a_mano | error
+    panel_note: str | None
+    final_score: float | None  # la del docente si la ajustó; si no, la sugerida
+    final_comment: str
+    score_override: float | None
+    comment_override: str | None
+    captured: bool
 
 
 class DownloadStatusOut(BaseModel):
+    batch_running: bool
+    batch_phase: str | None
+    batch_note: str | None
     running: bool
     marks_running: bool
     grading_running: bool
@@ -100,6 +111,31 @@ def _grade_out(s: Submission) -> GradeOut | None:
     )
 
 
+def _panel_status(s: Submission, mark_status: str | None, grade: GradeOut | None) -> tuple[str, str | None]:
+    """Estado único para el panel, con una nota breve de por qué."""
+    if not s.delivered:
+        return "sin_entrega", None
+    if s.download_status == "error":
+        return "error", s.error
+    if grade is not None and grade.status == "calificando":
+        return "procesando", None
+    if s.download_status in ("pendiente", "descargando"):
+        return "procesando" if s.download_status == "descargando" else "pendiente", None
+    if mark_status == MK_CON_MARCA:
+        return "con_marca", None
+    if mark_status in ("dudosa", "error") and s.mark_confirmed is None:
+        return "revisar_a_mano", s.mark_detail or "Posible marca por confirmar"
+    if grade is None or grade.stale:
+        return "pendiente", "Se calificó con otra versión de la clave" if grade else None
+    if grade.status == "error":
+        return "error", grade.error
+    if grade.status == "revisar_a_mano":
+        return "revisar_a_mano", "; ".join(grade.review_reasons) or None
+    if grade.status == "revisada":
+        return "revisada", None
+    return "pendiente", None
+
+
 def _submission_out(s: Submission) -> SubmissionDownloadOut:
     mark_status = mark_service.effective_status(s)
     grade = _grade_out(s)
@@ -109,7 +145,16 @@ def _submission_out(s: Submission) -> SubmissionDownloadOut:
         suggested = grade.score
     else:
         suggested = None
+    panel_status, panel_note = _panel_status(s, mark_status, grade)
+    final_comment = s.comment_override if s.comment_override is not None else (grade.comment if grade and not grade.stale else None)
     return SubmissionDownloadOut(
+        panel_status=panel_status,
+        panel_note=panel_note,
+        final_score=s.score_override if s.score_override is not None else suggested,
+        final_comment=final_comment or "",
+        score_override=s.score_override,
+        comment_override=s.comment_override,
+        captured=s.captured,
         status=s.download_status,
         error=s.error,
         pages=[PageOut(id=p.id, index=p.index, width=p.width, height=p.height) for p in s.pages],
@@ -138,6 +183,9 @@ def _submission_out(s: Submission) -> SubmissionDownloadOut:
 def _status(assignment: Assignment | None) -> DownloadStatusOut:
     if assignment is None:
         return DownloadStatusOut(
+            batch_running=False,
+            batch_phase=None,
+            batch_note=None,
             running=False,
             marks_running=False,
             grading_running=False,
@@ -151,7 +199,11 @@ def _status(assignment: Assignment | None) -> DownloadStatusOut:
     for s in assignment.submissions:
         counts[s.download_status] = counts.get(s.download_status, 0) + 1
         subs[s.classroom_submission_id] = _submission_out(s)
+    bs = batch.state(assignment.id)
     return DownloadStatusOut(
+        batch_running=batch.is_running(assignment.id),
+        batch_phase=bs.phase if bs else None,
+        batch_note=bs.note if bs else None,
         running=download.is_running(assignment.id),
         marks_running=mark_service.is_running(assignment.id),
         grading_running=any(s.grade is not None and s.grade.status == "calificando" for s in assignment.submissions),

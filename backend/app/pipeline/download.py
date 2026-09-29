@@ -89,16 +89,22 @@ def sync_submissions(
             sub.pages.clear()
             clear_mark_results(sub)
             sub.grade = None  # la calificación anterior ya no aplica
+            sub.score_override = sub.comment_override = None
+            sub.captured = False
             sub.download_status, sub.error = DL_SIN_ENTREGA, None
         elif not live.attachments:
             sub.pages.clear()
             sub.download_status = DL_ERROR
             sub.error = "Entregó sin archivos (solo enlaces o formularios)"
         elif ids != sub.attachment_ids or sub.download_status in (DL_SIN_ENTREGA, DL_EXPIRADA):
-            # Nueva entrega o volvió a entregar con otros archivos.
+            was_missing = sub.download_status == DL_SIN_ENTREGA or not sub.attachment_ids
             sub.download_status, sub.error = DL_PENDIENTE, None
-            clear_mark_results(sub)
-            sub.grade = None  # la calificación anterior ya no aplica
+            if ids != sub.attachment_ids or was_missing:
+                clear_mark_results(sub)
+                # Nueva entrega o volvió a entregar con otros archivos (no solo expiraron las imágenes).
+                sub.grade = None  # la calificación anterior ya no aplica
+                sub.score_override = sub.comment_override = None
+                sub.captured = False  # hay que capturar de nuevo
         sub.attachment_ids = ids if live.delivered else ""
     db.commit()
     return assignment
@@ -126,8 +132,9 @@ def process_submission(submission_id: int, source: FileSource) -> None:
             delete_page_files(sub.id)
             out_dir.mkdir(parents=True, exist_ok=True)
             sub.pages.clear()
-            clear_mark_results(sub)
-            sub.grade = None  # la calificación anterior ya no aplica
+            # Páginas nuevas: se vuelve a buscar la marca, pero se respeta la decisión del docente
+            # (si los archivos cambiaron, la sincronización ya la borró).
+            clear_mark_results(sub, keep_decision=True)
             index = 0
             for file_id in sub.attachment_ids.split():
                 fetched = source.fetch(file_id)

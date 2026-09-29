@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { api, type Submission, type SubmissionStatus } from './api'
 import { DownloadBar, DownloadCell, PageStrip } from './downloads'
 import { GradeCell, GradeDetail, KeyBanner } from './grading'
+import { CommentEditor, FilterChips, ProcessBar, ScoreEditor, StatusBadge, type Filter } from './panel'
 import { MarkCell, MarkCrops, MarksToolbar } from './marks'
 import { useDownloads } from './useDownloads'
 import { useApi } from './useApi'
@@ -136,8 +137,21 @@ export function SubmissionsPage() {
   const { data, error, loading } = useApi(() => api.submissions(courseId, cwId), [courseId, cwId])
   const downloads = useDownloads(courseId, cwId)
   const [openRow, setOpenRow] = useState<string | null>(null)
+  const [filter, setFilter] = useState<Filter>('todas')
+  const [hideCaptured, setHideCaptured] = useState(false)
+  const [showSteps, setShowSteps] = useState(false)
+
+  const statusOf = (id: string) => downloads.status?.submissions[id]
+  const rows = (data?.submissions ?? []).filter((s) => {
+    const d = statusOf(s.id)
+    if (hideCaptured && d?.captured) return false
+    if (filter === 'todas') return true
+    return (d?.panel_status ?? (s.status === 'sin_entrega' ? 'sin_entrega' : 'pendiente')) === filter
+  })
+  const allStatuses = Object.values(downloads.status?.submissions ?? {})
+
   return (
-    <section>
+    <section className="panel">
       <p>
         <Link to={`/cursos/${courseId}`}>← Tareas</Link>
       </p>
@@ -151,92 +165,146 @@ export function SubmissionsPage() {
               abrir en Classroom
             </a>
           </h2>
-          {data.coursework.description && <p className="description">{data.coursework.description}</p>}
           <p className="summary">
             {data.summary.entregadas} entregadas · {data.summary.sin_archivos} sin archivos ·{' '}
             {data.summary.sin_entrega} sin entrega · {data.summary.total} alumnos
           </p>
-          <DownloadBar
-            status={downloads.status}
-            starting={downloads.busy}
-            error={downloads.error}
-            onStart={() => void downloads.startDownload()}
-          />
-          <MarksToolbar
-            status={downloads.status}
-            busy={downloads.busy}
-            onToggle={(enabled) => void downloads.setModule(enabled)}
-            onDetect={() => void downloads.detectMarks()}
-            onConfirmAll={() => void downloads.confirmAll()}
-          />
           <KeyBanner status={downloads.status} courseId={courseId} cwId={cwId} />
-          <table>
+          <ProcessBar status={downloads.status} busy={downloads.busy} onProcess={() => void downloads.process()} />
+          {downloads.error && <ErrorBox message={downloads.error} />}
+
+          <button className="link small" onClick={() => setShowSteps((v) => !v)}>
+            {showSteps ? '▲ Ocultar pasos por separado' : '▼ Pasos por separado (descargar, marcas)'}
+          </button>
+          {showSteps && (
+            <div className="steps">
+              <DownloadBar
+                status={downloads.status}
+                starting={downloads.busy}
+                error={null}
+                onStart={() => void downloads.startDownload()}
+              />
+              <MarksToolbar
+                status={downloads.status}
+                busy={downloads.busy}
+                onToggle={(enabled) => void downloads.setModule(enabled)}
+                onDetect={() => void downloads.detectMarks()}
+                onConfirmAll={() => void downloads.confirmAll()}
+              />
+            </div>
+          )}
+
+          {allStatuses.length > 0 && (
+            <FilterChips
+              subs={allStatuses}
+              filter={filter}
+              onFilter={setFilter}
+              hideCaptured={hideCaptured}
+              onHideCaptured={setHideCaptured}
+            />
+          )}
+
+          <table className="panel-table">
             <thead>
               <tr>
                 <th>Alumno</th>
                 <th>Estado</th>
-                <th>Archivos</th>
-                <th>Imágenes</th>
-                <th>Marca</th>
                 <th>Calificación</th>
+                <th>Comentario privado</th>
                 <th>Classroom</th>
+                <th title="Ya lo capturé en Classroom">Capturado</th>
               </tr>
             </thead>
             <tbody>
-              {data.submissions.map((s) => {
-                const d = downloads.status?.submissions[s.id]
-                const open = openRow === s.id && d?.status === 'lista'
+              {rows.map((s) => {
+                const d = statusOf(s.id)
+                const open = openRow === s.id
                 return (
-                <Fragment key={s.id}>
-                <tr className={`row-${s.status}`}>
-                  <td>
-                    <div className="student">
-                      {s.student_name}
-                      <MarkCrops d={d} />
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`badge badge-${s.status}`}>{STATUS_LABEL[s.status]}</span>
-                    {/* Classroom marca "late" también a quien no entregó y ya venció; ahí no aporta. */}
-                    {s.late && s.status !== 'sin_entrega' && <span className="badge badge-late">Tarde</span>}
-                  </td>
-                  <td>
-                    <AttachmentList s={s} />
-                  </td>
-                  <td>
-                    <DownloadCell d={d} open={open} onToggle={() => setOpenRow(open ? null : s.id)} />
-                  </td>
-                  <td>
-                    <MarkCell d={d} busy={downloads.busy} onDecide={(c) => void downloads.decide(s.id, c)} />
-                  </td>
-                  <td>
-                    <GradeCell
-                      d={d}
-                      keyState={downloads.status?.key_state ?? 'sin_clave'}
-                      busy={downloads.busy}
-                      onGrade={() => void downloads.grade(s.id)}
-                      onOpen={() => setOpenRow(s.id)}
-                    />
-                  </td>
-                  <td>
-                    <a href={s.alternate_link} target="_blank" rel="noreferrer">
-                      Ver entrega
-                    </a>
-                  </td>
-                </tr>
-                {open && d && (
-                  <tr className="pages-row">
-                    <td colSpan={7}>
-                      <GradeDetail d={d} />
-                      <PageStrip d={d} />
-                    </td>
-                  </tr>
-                )}
-                </Fragment>
+                  <Fragment key={s.id}>
+                    <tr className={`row-${d?.panel_status ?? s.status} ${d?.captured ? 'row-captured' : ''}`}>
+                      <td>
+                        <div className="student">
+                          <button className="link student-name" onClick={() => setOpenRow(open ? null : s.id)}>
+                            {open ? '▲' : '▼'} {s.student_name}
+                          </button>
+                          <MarkCrops d={d} />
+                        </div>
+                        {s.late && s.status !== 'sin_entrega' && <span className="badge badge-late">Tarde</span>}
+                      </td>
+                      <td>
+                        {d ? <StatusBadge d={d} /> : <span className="muted">{STATUS_LABEL[s.status]}</span>}
+                      </td>
+                      <td>
+                        {d && (
+                          <ScoreEditor
+                            key={`${s.id}-${d.final_score}-${d.score_override}`}
+                            d={d}
+                            onSave={(p) => void downloads.review(s.id, p)}
+                          />
+                        )}
+                      </td>
+                      <td>
+                        {d && (
+                          <CommentEditor
+                            key={`${s.id}-${d.final_comment}-${d.comment_override === null}`}
+                            d={d}
+                            onSave={(p) => void downloads.review(s.id, p)}
+                          />
+                        )}
+                      </td>
+                      <td>
+                        <a href={s.alternate_link} target="_blank" rel="noreferrer">
+                          Abrir entrega
+                        </a>
+                      </td>
+                      <td className="center">
+                        {d && s.status !== 'sin_entrega' && (
+                          <input
+                            type="checkbox"
+                            aria-label="Capturado"
+                            checked={d.captured}
+                            disabled={downloads.busy}
+                            onChange={(e) => void downloads.review(s.id, { captured: e.target.checked })}
+                          />
+                        )}
+                      </td>
+                    </tr>
+                    {open && (
+                      <tr className="pages-row">
+                        <td colSpan={6}>
+                          <div className="detail-grid">
+                            <div>
+                              <div className="muted small">Archivos</div>
+                              <AttachmentList s={s} />
+                              <div className="muted small">Imágenes</div>
+                              <DownloadCell d={d} open onToggle={() => setOpenRow(null)} />
+                            </div>
+                            <div>
+                              <div className="muted small">Marca</div>
+                              <MarkCell d={d} busy={downloads.busy} onDecide={(c) => void downloads.decide(s.id, c)} />
+                            </div>
+                            <div>
+                              <div className="muted small">Calificación</div>
+                              <GradeCell
+                                d={d}
+                                keyState={downloads.status?.key_state ?? 'sin_clave'}
+                                busy={downloads.busy}
+                                onGrade={() => void downloads.grade(s.id)}
+                                onOpen={() => undefined}
+                              />
+                            </div>
+                          </div>
+                          {d && <GradeDetail d={d} />}
+                          {d && d.status === 'lista' && <PageStrip d={d} />}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 )
               })}
             </tbody>
           </table>
+          {rows.length === 0 && <p className="muted">No hay alumnos con ese filtro.</p>}
         </>
       )}
     </section>

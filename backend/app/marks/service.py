@@ -150,10 +150,12 @@ def verdict_for(v: CandidateVerdict, th: Thresholds) -> str:
     return V_DUDOSA
 
 
-def clear_mark_results(sub: Submission) -> None:
+def clear_mark_results(sub: Submission, keep_decision: bool = False) -> None:
     """Borra el resultado del módulo (p. ej. si el alumno volvió a entregar)."""
     sub.detections.clear()
-    sub.mark_status = sub.mark_detail = sub.mark_confirmed = None
+    sub.mark_status = sub.mark_detail = None
+    if not keep_decision:
+        sub.mark_confirmed = None
     shutil.rmtree(_data() / "pages" / str(sub.id) / "crops", ignore_errors=True)
 
 
@@ -165,7 +167,7 @@ def detect_in_submission(
     db: Session, sub: Submission, marks: list[ValidationMark], verifier: Verifier, th: Thresholds
 ) -> None:
     """Aplica el módulo de marca a una entrega ya descargada y guarda el resultado."""
-    clear_mark_results(sub)
+    clear_mark_results(sub, keep_decision=True)
     if not sub.pages:
         sub.mark_status, sub.mark_detail = MK_NO_REVISABLE, "La entrega no tiene imágenes"
         return

@@ -122,9 +122,34 @@ export interface SubmissionDownload {
   detections: Detection[]
   suggested_score: number | null
   grade: Grade | null
+  panel_status: PanelStatus
+  panel_note: string | null
+  final_score: number | null
+  final_comment: string
+  score_override: number | null
+  comment_override: string | null
+  captured: boolean
+}
+
+export type PanelStatus =
+  | 'sin_entrega'
+  | 'pendiente'
+  | 'procesando'
+  | 'con_marca'
+  | 'revisada'
+  | 'revisar_a_mano'
+  | 'error'
+
+export interface ReviewPatch {
+  captured?: boolean
+  score_override?: number | null
+  comment_override?: string | null
 }
 
 export interface DownloadStatus {
+  batch_running: boolean
+  batch_phase: 'descargando' | 'marcas' | 'calificando' | 'listo' | 'error' | null
+  batch_note: string | null
   running: boolean
   marks_running: boolean
   grading_running: boolean
@@ -263,6 +288,10 @@ export const api = {
     request<{ started: boolean }>(`${cw(courseId, cwId)}/submissions/${encodeURIComponent(sid)}/grade`, {
       method: 'POST',
     }),
+  process: (courseId: string, cwId: string) =>
+    request<{ started: boolean }>(`${cw(courseId, cwId)}/process`, { method: 'POST' }),
+  review: (courseId: string, cwId: string, sid: string, patch: ReviewPatch) =>
+    request<{ ok: boolean }>(`${cw(courseId, cwId)}/submissions/${encodeURIComponent(sid)}/review`, json('PATCH', patch)),
   confirmAllMarks: (courseId: string, cwId: string) =>
     request<{ confirmed: number }>(`${cw(courseId, cwId)}/marks/confirm-all`, { method: 'POST' }),
 }

@@ -140,6 +140,10 @@ class Submission(Base):
     mark_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Decisión del docente sobre la marca: True = confirmó, False = rechazó, None = sin decidir.
     mark_confirmed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    # Panel (etapa 5): lo que el docente ajusta y si ya lo capturó en Classroom.
+    score_override: Mapped[float | None] = mapped_column(Float, nullable=True)
+    comment_override: Mapped[str | None] = mapped_column(Text, nullable=True)
+    captured: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
 
     assignment: Mapped[Assignment] = relationship(back_populates="submissions")
     pages: Mapped[list["Page"]] = relationship(

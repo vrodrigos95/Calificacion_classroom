@@ -68,86 +68,71 @@ la casilla **Activa**.
 
 ---
 
-## 4. Revisar una tarea
+## 4. Revisar una tarea (el flujo normal)
 
-### 4.1 Elegir la tarea
-1. En **Mis cursos**, clic en el grupo.
-2. Clic en la tarea. Verás la tabla de alumnos: quién entregó, quién no, si fue tarde y qué
-   archivos subió. Arriba, el resumen: "44 entregadas · 0 sin archivos · 5 sin entrega".
+### 4.1 Una sola vez por tarea: la clave de respuestas
+Solo hace falta para calificar las entregas **sin** tu firma (las firmadas valen 100 sin clave).
 
-### 4.2 Descargar las entregas
-1. Clic en **Descargar entregas**.
-2. Espera a que termine (con ~45 entregas, menos de un minuto). Verás "X de Y procesadas".
-3. En la columna **Imágenes** aparece "1 página ▼", "2 páginas ▼", etc. Clic ahí para ver las
-   miniaturas; clic en una miniatura para verla completa.
-
-### 4.3 Revisar tu marca
-1. Revisa que esté marcada la casilla **Buscar mi marca en esta tarea**. Si en una tarea no
-   firmaste en clase, desmárcala.
-2. Clic en **Revisar marcas**.
-3. Junto al nombre de cada alumno con marca aparece el **recorte** de la firma encontrada.
-4. En la columna **Marca**:
-
-| Dice | Qué significa | Qué haces |
-|---|---|---|
-| **Con marca · 100** | Tu firma se reconoció con claridad. | Revisa el recorte de un vistazo. Si no es tu firma, clic en "No es mi marca". |
-| **¿Es tu marca?** | Se encontró algo parecido, pero hay que confirmar. | Mira el recorte y da clic en **✓ Sí, es mi marca** o **✗ No**. |
-| **Revisar a mano** | No se pudo verificar (p. ej. falló la conexión con Claude). | Mira el recorte y decide igual que arriba. |
-| **Sin marca** | No se encontró tu firma. | Esa tarea se revisa normal. |
-| **Módulo desactivado** | Desmarcaste "Buscar mi marca" en esta tarea. | — |
-| **Configura tu marca** | No tienes ninguna marca activa. | Ve a **Mi marca**. |
-
-- **Confirmar varias a la vez:** después de ver los recortes, **Confirmar las N por
-  confirmar** las marca todas como tuyas.
-- **Deshacer:** si te equivocas, clic en **deshacer** junto a tu decisión.
-- Tus decisiones **no se pierden** aunque vuelvas a dar "Revisar marcas".
-
-### 4.4 Preparar la clave de respuestas (solo para tareas sin tu firma)
-
-Las entregas con tu firma valen 100 sin clave. Para calificar las demás hace falta una clave
-**validada por ti**: la app nunca califica con una clave sin validar.
-
-1. En la tarea, clic en **Preparar la clave de respuestas →**.
-2. Elige una forma:
+1. En **Mis cursos**, entra al grupo y a la tarea.
+2. Clic en **Preparar la clave de respuestas →** y elige una forma:
    - **Capturarla tú** en la tabla (número, respuesta correcta y, si quieres, enunciado,
-     procedimiento esperado y notación exigida, p. ej. "en porcentaje; usar ∪"). No necesita Claude.
+     procedimiento esperado y notación exigida, p. ej. "en porcentaje; usar ∪"). No usa Claude.
    - **A. Subir mi clave:** escríbela o sube una foto o PDF; Claude la acomoda en la tabla.
    - **B. Resolver con Claude:** busca el enunciado en la descripción y adjuntos de la tarea;
-     si no está, en las hojas de los alumnos (descárgalas antes). Si distintos alumnos tienen
-     enunciados diferentes, te avisa.
-3. **Revisa y corrige** la tabla y da clic en **Validar clave**. Si luego la cambias, se
-   tiene que validar otra vez, y las calificaciones hechas con la clave anterior se marcan.
+     si no está, en las hojas de los alumnos. Si distintos alumnos tienen enunciados
+     diferentes, te avisa.
+3. **Revisa y corrige** la tabla y da clic en **Validar clave**. La app **nunca** califica con una
+   clave sin validar. Si luego la cambias, hay que validarla otra vez.
 4. Abajo eliges cuánto vale un **error menor** en esta tarea (por defecto, la mitad).
 
-### 4.5 Calificar una entrega
+### 4.2 Procesar la tarea (un clic)
+Clic en **Procesar tarea**. La app, sin que hagas nada más:
+1. Descarga las entregas.
+2. Busca tu firma (si la casilla del módulo está activa; ver "Pasos por separado").
+3. Pone 100 a las firmadas y califica las demás con la clave validada.
 
-1. En la columna **Calificación**, clic en **Calificar** (necesita la clave de Claude).
-2. En unos segundos aparece la calificación sugerida sobre 100:
-   - **Revisada:** Claude leyó todo con claridad. Solo revisa y copia.
-   - **Revisar a mano:** algo fue ilegible, ambiguo o dudoso. La calificación es solo una
-     sugerencia; pasa el mouse para ver el motivo.
-3. Clic en el número para ver el **detalle por ejercicio** (correcto, error menor,
-   incorrecto…), el **comentario sugerido** para el alumno (botón **Copiar comentario**) y las
-   páginas.
+Lo que ya estaba listo no se repite. Si un alumno entrega después o vuelve a entregar, da clic
+en **Procesar de nuevo**: solo se procesa lo nuevo.
 
-Reglas: cada ejercicio vale 100 / número de ejercicios; error menor = la mitad (o lo que
-configures). Un ejercicio que Claude no leyó con claridad **nunca** cuenta como correcto.
+### 4.3 El panel de revisión
+Cada alumno aparece en una fila:
 
-### 4.6 Capturar en Classroom
-1. Clic en **Ver entrega** en la fila del alumno: se abre su entrega en Classroom.
-2. Captura la calificación (por ejemplo 100 si dice "Con marca · 100").
+| Columna | Qué es |
+|---|---|
+| **Alumno** | Nombre y, si tiene marca, el **recorte** de tu firma para verificarla de un vistazo. Clic en el nombre para ver el detalle (páginas, ejercicio por ejercicio, decisiones sobre la marca). |
+| **Estado** | *Con marca*, *Revisada*, *Revisar a mano*, *Error*, *Pendiente* o *Sin entrega* (ver tabla abajo). |
+| **Calificación** | Sugerida sobre 100. Puedes cambiarla escribiendo otro número; "restaurar" regresa a la sugerida. 📋 la copia. |
+| **Comentario privado** | Sugerido para el alumno, en español y de tú. Puedes editarlo; **Copiar comentario** lo copia. |
+| **Classroom** | **Abrir entrega** te lleva directo a la entrega del alumno en Classroom. |
+| **Capturado** | Márcala cuando ya pusiste calificación y comentario en Classroom. |
 
-> En la etapa 5 la tabla tendrá un botón para **copiar calificación y comentario** y una
-> casilla **Capturado** para llevar el control.
+Arriba, los filtros (**Revisar a mano**, **Error**, **Con marca**…) y **Ocultar capturadas**
+te ayudan a ir en orden. Tu trabajo en el panel es **revisar y copiar**:
 
-### 4.7 Si un alumno entrega después o vuelve a entregar
-Clic en **Actualizar y reintentar errores**. La app descarga solo lo nuevo, lo que cambió y lo
-que había fallado. Después, **Revisar marcas** otra vez: tus decisiones anteriores se respetan,
-salvo en los alumnos que volvieron a entregar, que se revisan desde cero.
+1. Filtra **Revisar a mano** y resuelve cada una: confirma o rechaza la marca, o ajusta la
+   calificación después de ver las páginas y el motivo.
+2. Con **Todas**, ve alumno por alumno: **Abrir entrega** → pega la calificación (📋) y el
+   comentario (**Copiar comentario**) en Classroom → marca **Capturado**.
 
----
+| Estado | Qué significa | Qué haces |
+|---|---|---|
+| **Con marca** | Tu firma se reconoció (o la confirmaste). Vale 100. | Mira el recorte y captura. |
+| **Revisada** | Claude leyó todo con claridad. | Revisa rápido y captura. |
+| **Revisar a mano** | Algo es ilegible, ambiguo o dudoso, o hay una posible marca por confirmar. La calificación es solo sugerida. | Abre el detalle, decide y ajusta si hace falta. |
+| **Error** | No se pudo descargar o calificar (el motivo aparece abajo). | Revísala en Classroom o vuelve a procesar. |
+| **Pendiente** | Aún no se califica (p. ej. falta validar la clave). | Valida la clave y procesa de nuevo. |
+| **Sin entrega** | El alumno no entregó. | — |
 
-## 5. Qué significa cada estado de la columna "Imágenes"
+### 4.4 Pasos por separado (opcional)
+Debajo de **Procesar tarea**, "Pasos por separado" permite solo descargar, solo revisar marcas,
+desactivar la búsqueda de tu marca en esta tarea o **confirmar todas las marcas por confirmar**
+después de ver los recortes. En el detalle de cada alumno puedes **Calificar** una sola entrega.
+
+Reglas de la calificación: cada ejercicio vale 100 / número de ejercicios; error menor = la
+mitad (o lo que configures). Un ejercicio que Claude no leyó con claridad **nunca** cuenta como
+correcto. Una marca dudosa **nunca** da 100 sin tu confirmación.
+
+## 5. Estados de las imágenes (en el detalle de cada alumno)
 
 | Dice | Qué significa |
 |---|---|
@@ -175,7 +160,6 @@ salvo en los alumnos que volvieron a entregar, que se revisan desde cero.
 
 | Etapa | Qué agrega |
 |---|---|
-| 5 | Procesar toda la tarea de un solo clic, botón de copiar calificación y comentario, casilla "Capturado". |
 | 6 | Señalar posibles copias entre alumnos. |
 
 ---

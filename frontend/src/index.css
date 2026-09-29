@@ -43,7 +43,7 @@ header button { margin-left: 8px; }
 .brand { font-weight: 700; color: var(--text); text-decoration: none; }
 .header-right { display: flex; align-items: center; gap: 14px; }
 
-main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+main { max-width: 1280px; margin: 0 auto; padding: 16px; }
 
 .login { max-width: 480px; margin-top: 12vh; text-align: center; }
 .button, button {
@@ -161,3 +161,31 @@ button.primary { background: var(--accent); color: #fff; border-color: var(--acc
 .key-modes textarea, .key-table textarea, .key-table input { width: 100%; font: inherit; padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
 .key-table input.num { width: 4em; }
 .key-table td { vertical-align: top; }
+
+/* Panel de revisión */
+.process-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 12px 0; }
+.process-bar .alert, .process-bar .warn-box { flex-basis: 100%; margin: 0; }
+button.big { font-size: 1.05rem; padding: 10px 20px; }
+button:disabled { opacity: 0.6; }
+.steps { border-left: 3px solid var(--border); padding-left: 12px; margin: 8px 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 12px 0; }
+.chip { padding: 4px 10px; border-radius: 999px; font-size: 0.85rem; }
+.chip.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.chip-revisar_a_mano:not(.on), .chip-error:not(.on) { border-color: var(--warn); }
+.pbadge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.8rem; border: 1px solid currentColor; white-space: nowrap; }
+.pbadge-con_marca, .pbadge-revisada { color: var(--ok); }
+.pbadge-revisar_a_mano { color: var(--warn); font-weight: 600; }
+.pbadge-error { color: var(--bad); font-weight: 600; }
+.pbadge-pendiente, .pbadge-procesando, .pbadge-sin_entrega { color: var(--muted); }
+.panel-note { font-size: 0.78rem; color: var(--muted); max-width: 220px; }
+.score-editor { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.score-input { width: 3.6em; font: inherit; font-weight: 700; padding: 4px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); text-align: right; }
+.icon-btn { padding: 2px 6px; font-size: 0.9rem; }
+.comment-editor textarea { width: 100%; min-width: 260px; font: inherit; font-size: 0.9rem; padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+.comment-actions { display: flex; gap: 8px; align-items: center; }
+.row-captured td { opacity: 0.55; }
+.center { text-align: center; }
+.center input { width: 18px; height: 18px; }
+.student-name { color: var(--text); text-decoration: none; text-align: left; font: inherit; }
+.detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 8px; }
+.panel-table td { vertical-align: top; }

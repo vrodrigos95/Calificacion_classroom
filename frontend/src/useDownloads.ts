@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, ApiError, type DownloadStatus } from './api'
+import { api, ApiError, type DownloadStatus, type ReviewPatch } from './api'
 
 const POLL_MS = 2000
 
@@ -17,7 +17,7 @@ export function useDownloads(courseId: string, cwId: string) {
 
   useEffect(() => {
     let alive = true
-    const polling = status !== null && (status.running || status.marks_running || status.grading_running)
+    const polling = status !== null && (status.batch_running || status.running || status.marks_running || status.grading_running)
     const delay = status === null || tick > 0 ? 0 : polling ? POLL_MS : null
     if (delay === null) return
     const t = window.setTimeout(() => {
@@ -60,5 +60,7 @@ export function useDownloads(courseId: string, cwId: string) {
       run(() => api.markDecision(courseId, cwId, sid, confirmed)),
     confirmAll: () => run(() => api.confirmAllMarks(courseId, cwId)),
     grade: (sid: string) => run(() => api.grade(courseId, cwId, sid)),
+    process: () => run(() => api.process(courseId, cwId)),
+    review: (sid: string, patch: ReviewPatch) => run(() => api.review(courseId, cwId, sid, patch)),
   }
 }
