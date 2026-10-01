@@ -14,7 +14,7 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
-from app.db.models import DL_LISTA, G_CALIFICANDO, G_ERROR, Assignment, Submission
+from app.db.models import DL_LISTA, G_CALIFICANDO, G_ERROR, MODE_SOLO_FIRMA, Assignment, Submission
 from app.db.session import SessionLocal
 from app.files.base import FileSource
 from app.grading import grader
@@ -102,7 +102,11 @@ def run_all(
         elif module_on and not has_marks:
             notes.append("No tienes una marca configurada: configúrala en «Mi marca»")
 
-        # 3) Calificación
+        # 3) Calificación (en modo «solo firma» no hay nada más que calcular: lo hace el panel)
+        with SessionLocal() as db:
+            if db.get(Assignment, assignment_id).grading_mode == MODE_SOLO_FIRMA:
+                _set(assignment_id, "listo", ". ".join(notes))
+                return
         _set(assignment_id, "calificando")
         with SessionLocal() as db:
             a = db.get(Assignment, assignment_id)

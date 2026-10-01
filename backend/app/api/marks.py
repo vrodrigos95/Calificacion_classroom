@@ -4,12 +4,16 @@ from typing import Literal
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.api.deps import current_teacher
 from app.config import get_settings
 from app.db.models import (
+    DEFAULT_UNSIGNED_COMMENT,
+    DEFAULT_UNSIGNED_SCORE,
+    MODE_EJERCICIOS,
+    MODE_SOLO_FIRMA,
     MK_DUDOSA,
     MK_ERROR,
     Assignment,
@@ -170,28 +174,58 @@ def _assignment(db: Session, teacher: Teacher, course_id: str, coursework_id: st
 
 class AssignmentSettings(BaseModel):
     mark_module_enabled: bool
+    grading_mode: Literal["ejercicios", "solo_firma"]
+    unsigned_score: float
+    unsigned_comment: str
+
+
+class AssignmentSettingsIn(BaseModel):
+    """Solo se cambian los campos enviados."""
+
+    mark_module_enabled: bool | None = None
+    grading_mode: Literal["ejercicios", "solo_firma"] | None = None
+    unsigned_score: float | None = Field(default=None, ge=0, le=100)
+    unsigned_comment: str | None = Field(default=None, max_length=2000)
+
+
+def _settings_out(a: Assignment | None) -> AssignmentSettings:
+    if a is None:
+        return AssignmentSettings(
+            mark_module_enabled=True,
+            grading_mode=MODE_EJERCICIOS,
+            unsigned_score=DEFAULT_UNSIGNED_SCORE,
+            unsigned_comment=DEFAULT_UNSIGNED_COMMENT,
+        )
+    return AssignmentSettings(
+        mark_module_enabled=a.mark_module_enabled,
+        grading_mode=a.grading_mode,
+        unsigned_score=a.unsigned_score,
+        unsigned_comment=a.unsigned_comment,
+    )
 
 
 @router.get("/courses/{course_id}/coursework/{coursework_id}/settings", response_model=AssignmentSettings)
 def get_assignment_settings(
     course_id: str, coursework_id: str, teacher: Teacher = Depends(current_teacher), db: Session = Depends(get_db)
 ):
-    a = _assignment(db, teacher, course_id, coursework_id)
-    return AssignmentSettings(mark_module_enabled=a.mark_module_enabled if a else True)
+    return _settings_out(_assignment(db, teacher, course_id, coursework_id))
 
 
 @router.put("/courses/{course_id}/coursework/{coursework_id}/settings", response_model=AssignmentSettings)
 def put_assignment_settings(
     course_id: str,
     coursework_id: str,
-    body: AssignmentSettings,
+    body: AssignmentSettingsIn,
     teacher: Teacher = Depends(current_teacher),
     db: Session = Depends(get_db),
 ):
     a = _assignment(db, teacher, course_id, coursework_id, create=True)
-    a.mark_module_enabled = body.mark_module_enabled
+    for field, value in body.model_dump(exclude_none=True).items():
+        setattr(a, field, value.strip() if field == "unsigned_comment" else value)
+    if a.grading_mode == MODE_SOLO_FIRMA:
+        a.mark_module_enabled = True  # este modo depende de buscar la firma
     db.commit()
-    return AssignmentSettings(mark_module_enabled=a.mark_module_enabled)
+    return _settings_out(a)
 
 
 @router.post("/courses/{course_id}/coursework/{coursework_id}/marks/detect", status_code=202)

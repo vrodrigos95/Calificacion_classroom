@@ -85,7 +85,7 @@ def test_clear_mark_gets_100_and_toggle_disables_module(client, monkeypatch):
     s1 = client.get(f"{base}/download").json()["submissions"]["s1"]
     assert s1["mark_status"] == "con_marca" and s1["suggested_score"] == 100
 
-    assert client.put(f"{base}/settings", json={"mark_module_enabled": False}).json() == {"mark_module_enabled": False}
+    assert client.put(f"{base}/settings", json={"mark_module_enabled": False}).json()["mark_module_enabled"] is False
     client.post(f"{base}/marks/detect")
     st = client.get(f"{base}/download").json()
     assert st["mark_module_enabled"] is False

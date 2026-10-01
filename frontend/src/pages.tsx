@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { api, type Submission, type SubmissionStatus } from './api'
 import { DownloadBar, DownloadCell, PageStrip } from './downloads'
 import { GradeCell, GradeDetail, KeyBanner } from './grading'
+import { ModeBox } from './ModeBox'
 import { CommentEditor, FilterChips, ProcessBar, ScoreEditor, StatusBadge, type Filter } from './panel'
 import { MarkCell, MarkCrops, MarksToolbar } from './marks'
 import { useDownloads } from './useDownloads'
@@ -169,7 +170,10 @@ export function SubmissionsPage() {
             {data.summary.entregadas} entregadas · {data.summary.sin_archivos} sin archivos ·{' '}
             {data.summary.sin_entrega} sin entrega · {data.summary.total} alumnos
           </p>
-          <KeyBanner status={downloads.status} courseId={courseId} cwId={cwId} />
+          <ModeBox courseId={courseId} cwId={cwId} onChange={downloads.refresh} />
+          {downloads.status?.grading_mode !== 'solo_firma' && (
+            <KeyBanner status={downloads.status} courseId={courseId} cwId={cwId} />
+          )}
           <ProcessBar status={downloads.status} busy={downloads.busy} onProcess={() => void downloads.process()} />
           {downloads.error && <ErrorBox message={downloads.error} />}
 

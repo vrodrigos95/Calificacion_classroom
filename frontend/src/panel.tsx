@@ -3,6 +3,7 @@ import type { DownloadStatus, PanelStatus, ReviewPatch, SubmissionDownload } fro
 
 const PANEL_LABEL: Record<PanelStatus, string> = {
   revisar_a_mano: 'Revisar a mano',
+  sin_firma: 'Sin firma',
   con_marca: 'Con marca',
   revisada: 'Revisada',
   error: 'Error',
@@ -34,8 +35,9 @@ export function ProcessBar({
         {running ? PHASE[status?.batch_phase ?? ''] ?? 'Procesando…' : processed ? 'Procesar de nuevo' : 'Procesar tarea'}
       </button>
       <span className="muted small">
-        Descarga las entregas, busca tu marca y califica las demás con la clave validada. Lo que ya está listo no se
-        repite.
+        {status?.grading_mode === 'solo_firma'
+          ? 'Descarga las entregas y busca tu firma. Lo que ya está listo no se repite.'
+          : 'Descarga las entregas, busca tu marca y califica las demás con la clave validada. Lo que ya está listo no se repite.'}
       </span>
       {!running && status?.batch_phase === 'error' && <div className="alert">{status.batch_note}</div>}
       {!running && status?.batch_phase === 'listo' && status.batch_note && (
@@ -62,7 +64,7 @@ export function FilterChips({
 }) {
   const count = (s: PanelStatus) => subs.filter((x) => x.panel_status === s).length
   const captured = subs.filter((x) => x.captured).length
-  const order: PanelStatus[] = ['revisar_a_mano', 'error', 'con_marca', 'revisada', 'pendiente', 'sin_entrega']
+  const order: PanelStatus[] = ['revisar_a_mano', 'error', 'sin_firma', 'con_marca', 'revisada', 'pendiente', 'sin_entrega']
   return (
     <div className="chips">
       <button className={`chip ${filter === 'todas' ? 'on' : ''}`} onClick={() => onFilter('todas')}>
@@ -156,9 +158,9 @@ export function CommentEditor({
 }) {
   const [value, setValue] = useState(d.final_comment)
   const [copied, setCopied] = useState(false)
-  const nothingYet = !d.grade && d.comment_override === null && d.panel_status !== 'con_marca'
+  const nothingYet = !d.suggested_comment && d.comment_override === null && d.final_score === null
   if (d.panel_status === 'sin_entrega' || nothingYet) return <span className="muted">—</span>
-  const suggested = d.grade && !d.grade.stale ? d.grade.comment ?? '' : ''
+  const suggested = d.suggested_comment
   const commit = () => {
     if (value === d.final_comment) return
     onSave({ comment_override: value === suggested ? null : value })

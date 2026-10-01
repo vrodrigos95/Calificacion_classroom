@@ -126,6 +126,7 @@ export interface SubmissionDownload {
   panel_note: string | null
   final_score: number | null
   final_comment: string
+  suggested_comment: string
   score_override: number | null
   comment_override: string | null
   captured: boolean
@@ -138,7 +139,17 @@ export type PanelStatus =
   | 'con_marca'
   | 'revisada'
   | 'revisar_a_mano'
+  | 'sin_firma'
   | 'error'
+
+export type GradingMode = 'ejercicios' | 'solo_firma'
+
+export interface AssignmentSettings {
+  mark_module_enabled: boolean
+  grading_mode: GradingMode
+  unsigned_score: number
+  unsigned_comment: string
+}
 
 export interface ReviewPatch {
   captured?: boolean
@@ -147,6 +158,7 @@ export interface ReviewPatch {
 }
 
 export interface DownloadStatus {
+  grading_mode: GradingMode
   batch_running: boolean
   batch_phase: 'descargando' | 'marcas' | 'calificando' | 'listo' | 'error' | null
   batch_note: string | null
@@ -260,6 +272,9 @@ export const api = {
   replaceReferences: (id: number, form: FormData) =>
     request<Mark>(`/api/marks/${id}/references`, { method: 'PUT', body: form }),
   deleteMark: (id: number) => request<void>(`/api/marks/${id}`, { method: 'DELETE' }),
+  settings: (courseId: string, cwId: string) => request<AssignmentSettings>(`${cw(courseId, cwId)}/settings`),
+  saveSettings: (courseId: string, cwId: string, patch: Partial<AssignmentSettings>) =>
+    request<AssignmentSettings>(`${cw(courseId, cwId)}/settings`, json('PUT', patch)),
   setMarkModule: (courseId: string, cwId: string, enabled: boolean) =>
     request<{ mark_module_enabled: boolean }>(
       `${cw(courseId, cwId)}/settings`,

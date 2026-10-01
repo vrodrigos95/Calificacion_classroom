@@ -83,6 +83,12 @@ class TeacherSettings(Base):
     teacher: Mapped[Teacher] = relationship(back_populates="settings")
 
 
+MODE_EJERCICIOS = "ejercicios"
+MODE_SOLO_FIRMA = "solo_firma"
+DEFAULT_UNSIGNED_SCORE = 90.0
+DEFAULT_UNSIGNED_COMMENT = "La actividad tiene que estar firmada"
+
+
 class Assignment(Base):
     """Una tarea de Classroom que el docente procesa en la app."""
 
@@ -97,6 +103,13 @@ class Assignment(Base):
     # Configuración por tarea (etapas 3 y 4). None = usar la del docente.
     mark_module_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     minor_error_factor: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # Modo de calificación: "ejercicios" (clave + Claude) o "solo_firma" (con firma = 100;
+    # sin firma = unsigned_score con unsigned_comment). El modo solo firma no usa Claude.
+    grading_mode: Mapped[str] = mapped_column(String(20), default=MODE_EJERCICIOS, server_default=MODE_EJERCICIOS)
+    unsigned_score: Mapped[float] = mapped_column(Float, default=DEFAULT_UNSIGNED_SCORE, server_default="90")
+    unsigned_comment: Mapped[str] = mapped_column(
+        Text, default=DEFAULT_UNSIGNED_COMMENT, server_default=DEFAULT_UNSIGNED_COMMENT
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     submissions: Mapped[list["Submission"]] = relationship(

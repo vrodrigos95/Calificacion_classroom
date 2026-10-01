@@ -61,6 +61,7 @@ export function useDownloads(courseId: string, cwId: string) {
     confirmAll: () => run(() => api.confirmAllMarks(courseId, cwId)),
     grade: (sid: string) => run(() => api.grade(courseId, cwId, sid)),
     process: () => run(() => api.process(courseId, cwId)),
+    refresh: () => setTick((n) => n + 1),
     review: (sid: string, patch: ReviewPatch) => run(() => api.review(courseId, cwId, sid, patch)),
   }
 }

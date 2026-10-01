@@ -189,3 +189,10 @@ button:disabled { opacity: 0.6; }
 .student-name { color: var(--text); text-decoration: none; text-align: left; font: inherit; }
 .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 8px; }
 .panel-table td { vertical-align: top; }
+
+/* Modo de calificación */
+.mode-box { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); margin: 8px 0; }
+.mode-fields { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: 22px; }
+.comment-input { flex: 1; min-width: 260px; font: inherit; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+.pbadge-sin_firma { color: var(--warn); }
+.chip-sin_firma:not(.on) { border-color: var(--warn); }

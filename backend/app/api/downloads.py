@@ -12,7 +12,7 @@ from app.api.deps import classroom_reader, current_teacher
 from app.auth.google_oauth import credentials_for
 from app.classroom.client import ClassroomReader
 from app.config import get_settings
-from app.db.models import MK_CON_MARCA, V_DUDOSA, V_MARCA, Assignment, Page, Submission, Teacher
+from app.db.models import MK_CON_MARCA, MODE_SOLO_FIRMA, V_DUDOSA, V_MARCA, Assignment, Page, Submission, Teacher
 from app.db.session import get_db
 from app.files.base import FileSource
 from app.files.drive_readonly import DriveReadonlySource, build_drive_service
@@ -76,12 +76,14 @@ class SubmissionDownloadOut(BaseModel):
     panel_note: str | None
     final_score: float | None  # la del docente si la ajustó; si no, la sugerida
     final_comment: str
+    suggested_comment: str  # el automático (de la calificación o del modo «solo firma»)
     score_override: float | None
     comment_override: str | None
     captured: bool
 
 
 class DownloadStatusOut(BaseModel):
+    grading_mode: str
     batch_running: bool
     batch_phase: str | None
     batch_note: str | None
@@ -136,22 +138,57 @@ def _panel_status(s: Submission, mark_status: str | None, grade: GradeOut | None
     return "pendiente", None
 
 
+def _signature_only(s: Submission, mark_status: str | None) -> tuple[str, str | None, float | None, str]:
+    """Modo «solo revisar firma»: con firma = 100; sin firma = puntaje y comentario de la tarea.
+
+    Devuelve (estado del panel, nota, calificación sugerida, comentario sugerido).
+    Una marca dudosa no tiene calificación sugerida: el docente debe decidir primero.
+    """
+    a = s.assignment
+    if not s.delivered:
+        return "sin_entrega", None, None, ""
+    if s.download_status == "error":
+        return "error", s.error, None, ""
+    if s.download_status in ("pendiente", "descargando"):
+        return ("procesando" if s.download_status == "descargando" else "pendiente"), None, None, ""
+    if mark_status == MK_CON_MARCA:
+        return "con_marca", None, 100.0, ""
+    if mark_status in ("dudosa", "error"):
+        return "revisar_a_mano", "¿Es tu firma? Confírmala (100) o recházala", None, ""
+    if mark_status == "sin_marca":
+        note = "Rechazaste la marca" if s.mark_confirmed is False else "No se encontró tu firma; si sí la tiene, revisa la hoja"
+        return "sin_firma", note, a.unsigned_score, a.unsigned_comment
+    notes = {
+        None: "Falta buscar la firma: da clic en «Procesar tarea»",
+        "desactivado": "Activa «Buscar mi marca en esta tarea» para este modo",
+        "sin_config": "Configura tu marca en «Mi marca»",
+        "no_revisable": "La entrega no tiene imágenes",
+    }
+    return ("error" if mark_status == "no_revisable" else "pendiente"), notes.get(mark_status), None, ""
+
+
 def _submission_out(s: Submission) -> SubmissionDownloadOut:
     mark_status = mark_service.effective_status(s)
     grade = _grade_out(s)
-    if mark_status == MK_CON_MARCA:
-        suggested = 100.0
-    elif grade and grade.status in ("revisada", "revisar_a_mano") and not grade.stale:
-        suggested = grade.score
+    if s.assignment.grading_mode == MODE_SOLO_FIRMA:
+        panel_status, panel_note, suggested, auto_comment = _signature_only(s, mark_status)
     else:
-        suggested = None
-    panel_status, panel_note = _panel_status(s, mark_status, grade)
-    final_comment = s.comment_override if s.comment_override is not None else (grade.comment if grade and not grade.stale else None)
+        if mark_status == MK_CON_MARCA:
+            suggested = 100.0
+        elif grade and grade.status in ("revisada", "revisar_a_mano") and not grade.stale:
+            suggested = grade.score
+        else:
+            suggested = None
+        panel_status, panel_note = _panel_status(s, mark_status, grade)
+        # Con marca "tarea correcta" el contenido no se revisa: no aplica el comentario de ejercicios.
+        auto_comment = "" if mark_status == MK_CON_MARCA else (grade.comment if grade and not grade.stale else "")
+    final_comment = s.comment_override if s.comment_override is not None else auto_comment
     return SubmissionDownloadOut(
         panel_status=panel_status,
         panel_note=panel_note,
         final_score=s.score_override if s.score_override is not None else suggested,
         final_comment=final_comment or "",
+        suggested_comment=auto_comment or "",
         score_override=s.score_override,
         comment_override=s.comment_override,
         captured=s.captured,
@@ -183,6 +220,7 @@ def _submission_out(s: Submission) -> SubmissionDownloadOut:
 def _status(assignment: Assignment | None) -> DownloadStatusOut:
     if assignment is None:
         return DownloadStatusOut(
+            grading_mode="ejercicios",
             batch_running=False,
             batch_phase=None,
             batch_note=None,
@@ -201,6 +239,7 @@ def _status(assignment: Assignment | None) -> DownloadStatusOut:
         subs[s.classroom_submission_id] = _submission_out(s)
     bs = batch.state(assignment.id)
     return DownloadStatusOut(
+        grading_mode=assignment.grading_mode,
         batch_running=batch.is_running(assignment.id),
         batch_phase=bs.phase if bs else None,
         batch_note=bs.note if bs else None,

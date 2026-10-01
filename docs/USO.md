@@ -70,6 +70,25 @@ la casilla **Activa**.
 
 ## 4. Revisar una tarea (el flujo normal)
 
+### 4.0 Elegir cómo se califica la tarea
+Arriba de cada tarea, en **¿Cómo se califica esta tarea?**:
+
+- **Solo revisar mi firma** (no usa Claude ni clave de respuestas): con firma = **100** sin
+  comentario; sin firma = **90** con el comentario **"La actividad tiene que estar firmada"**.
+  Puedes cambiar el 90 y el comentario ahí mismo; el cambio aplica de inmediato a toda la tarea.
+  Sigue con **4.2** (no hace falta la clave de respuestas).
+- **Revisar los ejercicios:** con firma = 100; las demás se califican con la clave de respuestas
+  y Claude (secciones 4.1 y 4.2).
+
+> En modo local (sin clave de Claude), las firmas encontradas aparecen como **Revisar a mano**
+> y **no tienen calificación hasta que las confirmes** (nunca se pone 100 ni 90 sin tu
+> decisión). Mira los recortes y usa **Confirmar las N por confirmar** o confírmalas una por una.
+> Si rechazas una marca ("No"), esa entrega pasa a **Sin firma** (90).
+>
+> Revisa también el filtro **Sin firma**: si una firma era muy tenue o quedó cortada en la foto,
+> puede no detectarse. Abre la hoja y, si sí está firmada, corrige la calificación a 100 y borra
+> el comentario.
+
 ### 4.1 Una sola vez por tarea: la clave de respuestas
 Solo hace falta para calificar las entregas **sin** tu firma (las firmadas valen 100 sin clave).
 
@@ -117,6 +136,7 @@ te ayudan a ir en orden. Tu trabajo en el panel es **revisar y copiar**:
 | Estado | Qué significa | Qué haces |
 |---|---|---|
 | **Con marca** | Tu firma se reconoció (o la confirmaste). Vale 100. | Mira el recorte y captura. |
+| **Sin firma** | (Modo «solo firma») No se encontró tu firma: 90 y el comentario configurado. | Revisa rápido la hoja por si la firma no se detectó, y captura. |
 | **Revisada** | Claude leyó todo con claridad. | Revisa rápido y captura. |
 | **Revisar a mano** | Algo es ilegible, ambiguo o dudoso, o hay una posible marca por confirmar. La calificación es solo sugerida. | Abre el detalle, decide y ajusta si hace falta. |
 | **Error** | No se pudo descargar o calificar (el motivo aparece abajo). | Revísala en Classroom o vuelve a procesar. |
